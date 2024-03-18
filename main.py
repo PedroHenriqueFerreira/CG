@@ -3,19 +3,20 @@ from OpenGL.GLUT import *
 
 from map import Map
 from vector import Vector2
-from rgb import hexToRGB, hexToRGBA
+from rgb import hexToRGB, hexToRGBA, randomRGB
  
 location = Map('russas.geojson')
+
+LINE_WIDTH = 0.0001
 
 is_dragging = False
 last_click_pos = Vector2(0, 0)
 
 def initializeGL():
-    glClearColor(*hexToRGBA('#464646', 1))
+    glClearColor(*hexToRGBA('#2B2D31', 1))
     
     glEnable(GL_POINT_SMOOTH)
-    
-    glLineWidth(1)
+    glLineWidth(10)
     glPointSize(3)
 
 def paintGL():
@@ -25,8 +26,12 @@ def paintGL():
     glLoadIdentity()
     glOrtho(location.min.x, location.max.x, location.min.y, location.max.y, -1, 1)
     
-    glColor3f(*hexToRGB('#3C3C3C'))
     for polygon in location.polygons:
+        if polygon.type == 'water':
+            glColor3f(*hexToRGB('#5C64F4'))
+        else:
+            glColor3f(*hexToRGB('#232428'))
+        
         glBegin(GL_POLYGON)
         
         for coord in polygon.coords:
@@ -34,29 +39,34 @@ def paintGL():
             
         glEnd()
     
-    glColor3f(*hexToRGB('#2C2C2C'))
+    glColor3f(*hexToRGB('#131110'))
     for line in location.lines:        
-        for coord, next_coord in zip(line.coords[:-1], line.coords[1:]):
-            delta = next_coord - coord
-            normal = Vector2(-delta.y, delta.x).normalize()
-            
-            width = 0.0001
-            
-            p0 = coord + normal * (width / 2)
-            p1 = coord - normal * (width / 2)
-            p2 = next_coord - normal * (width / 2)
-            p3 = next_coord + normal * (width / 2)
-            
-            glBegin(GL_QUADS)
-            
-            glVertex2f(p0.x, p0.y)
-            glVertex2f(p1.x, p1.y)
-            glVertex2f(p2.x, p2.y)
-            glVertex2f(p3.x, p3.y)
+        # glBegin(GL_QUADS)
         
-            glEnd()
+        # for coord, next_coord in zip(line.coords[:-1], line.coords[1:]):
+        #     delta = next_coord - coord
+        #     normal = Vector2(-delta.y, delta.x).normalize()
+
+        #     p0 = coord + normal * (LINE_WIDTH / 2)
+        #     p1 = coord - normal * (LINE_WIDTH / 2)
+        #     p2 = next_coord - normal * (LINE_WIDTH / 2)
+        #     p3 = next_coord + normal * (LINE_WIDTH / 2)
+            
+        #     glVertex2f(p0.x, p0.y)
+        #     glVertex2f(p1.x, p1.y)
+        #     glVertex2f(p2.x, p2.y)
+        #     glVertex2f(p3.x, p3.y)
+        
+        # glEnd()
+        
+        glBegin(GL_LINE_STRIP)
+        
+        for coord in line.coords:
+            glVertex2f(coord.x, coord.y)
+        
+        glEnd()
      
-    glColor3f(*hexToRGB('#FFFFFF'))
+    glColor3f(*hexToRGB('#EC4444'))
     for line in location.lines:
         glBegin(GL_POINTS)
         
@@ -64,6 +74,15 @@ def paintGL():
             glVertex2f(coord.x, coord.y)
         
         glEnd()
+        
+    glColor3f(*hexToRGB('#23A559'))
+    glBegin(GL_POINTS)
+    
+    for point in location.points:
+        
+        glVertex2f(point.coord.x, point.coord.y)
+        
+    glEnd()
 
     glFlush()   
 

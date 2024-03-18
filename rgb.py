@@ -1,3 +1,5 @@
+from random import randint
+
 def hexToRGB(hex: str):
     hex = hex.lstrip('#')
     
@@ -5,3 +7,6 @@ def hexToRGB(hex: str):
 
 def hexToRGBA(hex: str, alpha: float):
     return hexToRGB(hex) + (alpha,)
+
+def randomRGB():
+    return hexToRGB(f'#{randint(0, 0xFFFFFF):06x}')
