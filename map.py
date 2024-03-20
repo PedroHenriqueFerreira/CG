@@ -2,14 +2,90 @@ import json
 
 from vector import Vector2
 
+from triangulation import earclip
+
 class Polygon:
-    def __init__(self, coords: list[Vector2], type: str):
-        self.coords = coords
+    def __init__(self, coords: list[list[Vector2]], type: str | None):
+        # self.coords: list[list[Vector2]] = coords
         self.type = type
+        
+        # print(coords[0])
+        
+        self.coords = coords
+        
+        # for coord in coords:
+        #     triangle = earclip(coord[:])
+        
+        #     # print(triangles)
+            
+        #     # if len(triangles) == 0:
+        #     #     self.coords.append(coord)
+        #     # else:
+            
+        #     if len(triangle) == 0:
+        #         self.coords.append(coord)
+        #     else:
+        #         self.triangles.append(triangle)
 
     def __repr__(self):
-        return f'Polygon({self.coords})'
+        return f'Polygon({self.coords, self.type})'
 
+    def triangulate(self, coord: list[Vector2]):
+        triangules: list[Vector2] = []
+        
+        # last = -1
+        
+        while len(coord) > 3:
+            # if last == len(coord):
+            #     print('Error')
+            #     triangules.clear()
+            #     break
+            
+            # last = len(coord)
+            
+            for i in range(len(coord)):
+                if self.isEar(coord, i):
+                    prev = (i - 1) % len(coord)
+                    next = (i + 1) % len(coord)
+                    
+                    triangules.extend([coord[prev], coord[i], coord[next]])
+                    
+                    del coord[i]
+                    break
+                
+        triangules.extend(coord)
+        
+        return triangules
+        
+    def isEar(self, coord: list[Vector2], i: int):
+        prev = (i - 1) % len(coord)
+        next = (i + 1) % len(coord)
+        
+        p_prev, p, p_next = coord[prev], coord[i], coord[next]
+        
+        if Vector2.cross(p_next - p, p_prev - p) >= 0:
+            return False
+        
+        for j in range(len(coord)):
+            if j not in (prev, i, next):
+                if self.isPointInTriangle(coord[j], p_prev, p, p_next):
+                    return False
+            
+        return True
+        
+    def isPointInTriangle(self, p: Vector2, p1: Vector2, p2: Vector2, p3: Vector2):
+        def sign(pt1, pt2, pt3):
+            return (pt1.x - pt3.x) * (pt2.y - pt3.y) - (pt2.x - pt3.x) * (pt1.y - pt3.y)
+    
+        d1 = sign(p, p1, p2)
+        d2 = sign(p, p2, p3)
+        d3 = sign(p, p3, p1)
+
+        has_neg = (d1 < 0) or (d2 < 0) or (d3 < 0)
+        has_pos = (d1 > 0) or (d2 > 0) or (d3 > 0)
+
+        return not (has_neg and has_pos)
+        
 class Line:
     def __init__(self, coords: list[Vector2]):
         self.coords = coords
@@ -18,11 +94,12 @@ class Line:
         return f'Line({self.coords})'
 
 class Point:
-    def __init__(self, coord: Vector2):
+    def __init__(self, coord: Vector2, type: str | None = None):
         self.coord = coord
+        self.type = type
 
     def __repr__(self):
-        return f'Point({self.coord})'
+        return f'Point({self.coord, self.type})'
 
 class Map:
     def __init__(self, file: str):
@@ -61,46 +138,60 @@ class Map:
         for feature in data['features']:
             type = feature['geometry']['type']
             coords = feature['geometry']['coordinates']
-            properties = feature['properties']
+            
+            properties = feature['properties'] # TODO: Use properties
 
             if type == 'Polygon':
-                coords_ = []
+                if properties.get('type') == 'boundary':
+                    continue
                 
-                for coord in coords[0]:
-                    vector2 = Vector2(coord[0], coord[1])
-                    
-                    coords_.append(vector2)
-                    self.updateMinMax(vector2)
-                
-                type_ = None
-                
-                for item in ['building', 'shop', 'amenity', 'tourism', 'man_made', 'club', 'office', 'natural']:
-                    if type_ == 'yes':
-                        type_ = None
-                    
-                    if type_ is None:
-                        type_ = properties.get(item, None)
-                    
-                if type_ is None:
-                    type_ = 'unknown'
-                    
-                self.polygons.append(Polygon(coords_, type_))
-                
-            elif type == 'LineString':
                 coords_ = []
                 
                 for coord in coords:
-                    vector2 = Vector2(coord[0], coord[1])
+                    coord_ = []
                     
-                    coords_.append(vector2)
-                    self.updateMinMax(vector2)
+                    for x, y in coord:
+                        point = Vector2(x, y)
+                        
+                        coord_.append(point)
+                        self.updateMinMax(point)
+                        
+                    coords_.append(coord_)
                 
+                type_ = None
+                
+                if properties.get('natural', None) == 'water':
+                    type_ = 'water'
+                
+                if properties.get('natural', None) == 'wood':
+                    type_ = 'wood'
+                
+                self.polygons.append(Polygon(coords_, type_))
+                
+            elif type == 'LineString':
+                if properties.get('highway') in ('track', 'footway', 'pedestrian', 'cycleway'):
+                    continue
+                
+                coords_ = []
+                
+                for x, y in coords:
+                    point = Vector2(x, y)
+                    
+                    coords_.append(point)
+                    self.updateMinMax(point)
+                    
                 self.lines.append(Line(coords_))
                 
-            else:
-                vector2 = Vector2(coords[0], coords[1])
+            elif type == 'Point':
+                point = Vector2(coords[0], coords[1])
                 
-                self.points.append(Point(vector2))
+                type_ = None
                 
+                if properties.get('natural', None) == 'tree':
+                    type_ = 'tree'
+                
+                self.points.append(Point(point, type_))
+                self.updateMinMax(point)
+                            
 if __name__ == '__main__':
     location = Map('russas.geojson')
