@@ -7,18 +7,32 @@ from rgb import hexToRGB, hexToRGBA
 
 location = Map('russas.geojson')
 
-LINE_WIDTH = 0.0001
-
 is_dragging = False
 last_click_pos = Vector2(0, 0)
 
-
 def initializeGL():
-    glClearColor(*hexToRGBA('#F2EFE9', 1))
+    glClearColor(*hexToRGBA('#F8F7F7', 1))
 
     glEnable(GL_POINT_SMOOTH)
+    glEnable(GL_POLYGON_SMOOTH)
     glLineWidth(2)
     glPointSize(5)
+
+def textGL(coord: Vector2, text: str):
+    text_width = 0
+    
+    for char in text:
+        text_width += glutBitmapWidth(GLUT_BITMAP_8_BY_13, ord(char))
+    
+    window_width = glutGet(GLUT_WINDOW_WIDTH)
+    
+    x = coord.x - (text_width / window_width) * (location.max.x - location.min.x) / 2
+    y = coord.y
+    
+    glRasterPos2f(x, y)
+
+    for char in text:
+        glutBitmapCharacter(GLUT_BITMAP_8_BY_13, ord(char))
 
 def paintGL():
     glClear(GL_COLOR_BUFFER_BIT)
@@ -29,77 +43,54 @@ def paintGL():
 
     # DRAW POLYGONS
     for polygon in location.polygons:
-        if polygon.type == 'water':
-            glColor3f(*hexToRGB('#AAD3DF'))
-        elif polygon.type == 'wood':
-            glColor3f(*hexToRGB('#B8D4A7'))
+        if polygon.type == 'grass':
+            glColor3f(*hexToRGB('#D3F8E2'))
+        elif polygon.type == 'water':
+            glColor3f(*hexToRGB('#90DAEE'))
         else:
-            glColor3f(*hexToRGB('#D9D0C9'))
-        
-        for coord in polygon.coords:
-            glBegin(GL_POLYGON)
+            glColor3f(*hexToRGB('#E8E9ED'))
+                    
+        for coord in polygon.triangles:
+            glBegin(GL_TRIANGLES)
             
             for point in coord:
                 glVertex2f(point.x, point.y)
 
             glEnd()
 
-    # DRAW POLYGON BORDERS
-    glColor3f(*hexToRGB('#C6B9AE'))
+    # DRAW BUILDING BORDERS
+    glColor3f(*hexToRGB('#D9DBE7'))
     for polygon in location.polygons:
-        if polygon.type in ('water', 'wood'):
+        if polygon.type != 'building':
             continue
         
         for coord in polygon.coords:
             glBegin(GL_LINE_LOOP)
-
+            
             for point in coord:
                 glVertex2f(point.x, point.y)
 
             glEnd()
 
     # DRAW LINES
-    glColor3f(*hexToRGB('#FFFFFF'))
+    glColor3f(*hexToRGB('#B1BFCD'))
     for line in location.lines:
-        # glBegin(GL_QUADS)
+        glBegin(GL_QUADS)
 
-        # for coord, next_coord in zip(line.coords[:-1], line.coords[1:]):
-        #     delta = next_coord - coord
-        #     normal = Vector2(-delta.y, delta.x).normalize()
-
-        #     p0 = coord + normal * (LINE_WIDTH / 2)
-        #     p1 = coord - normal * (LINE_WIDTH / 2)
-        #     p2 = next_coord - normal * (LINE_WIDTH / 2)
-        #     p3 = next_coord + normal * (LINE_WIDTH / 2)
-
-        #     glVertex2f(p0.x, p0.y)
-        #     glVertex2f(p1.x, p1.y)
-        #     glVertex2f(p2.x, p2.y)
-        #     glVertex2f(p3.x, p3.y)
-
-        # glEnd()
-
-        glBegin(GL_LINES)
-
-        for point, next_point in zip(line.coords[:-1], line.coords[1:]):
+        for point in line.quads:
             glVertex2f(point.x, point.y)
-            glVertex2f(next_point.x, next_point.y)
 
         glEnd()
-
-    glBegin(GL_POINTS)
-    for point in location.points:
-        if point.type == 'tree':
-            glColor3f(*hexToRGB('#B8D4A7'))
-        else:
-            glColor3f(*hexToRGB('#FFFFFF'))
-
-        glVertex2f(point.coord.x, point.coord.y)
-
-    glEnd()
-
+     
+    # DRAW POLYGONS NAMES
+    glColor3f(*hexToRGB('#7D7D7D'))
+    for polygon in location.polygons:
+        if polygon.name is None:
+            continue
+        
+        textGL(polygon.centroid(), polygon.name)
+        
     glFlush()
-
 
 def normalizeXY(coord: Vector2):
     window = Vector2(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT))
@@ -142,7 +133,6 @@ def motionGL(x, y):
         location.max += delta
 
         glutPostRedisplay()
-
 
 glutInit()
 glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB)

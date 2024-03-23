@@ -1,3 +1,4 @@
+from math import pi, atan2
 from typing import Union
 
 ScalarType = Union[int, float]
@@ -83,18 +84,20 @@ class Vector2:
         
         return other ** self
     
-    def __matmul__(self, other: 'Vector2'):
-        return self.x * other.x + self.y * other.y
-    
-    def __rmatmul__(self, other: 'Vector2'):
-        return other @ self
-    
     def module(self):
-        return (self @ self) ** 0.5
+        return (Vector2.dot(self, self)) ** 0.5
     
     def normalize(self):
         return self / self.module()
 
     @staticmethod
+    def dot(a: 'Vector2', b: 'Vector2'):
+        return a.x * b.x + a.y * b.y
+
+    @staticmethod
     def cross(a: 'Vector2', b: 'Vector2'):
         return a.x * b.y - a.y * b.x
+    
+    @staticmethod
+    def angle(a: 'Vector2', b: 'Vector2'):
+        return (pi + atan2(Vector2.cross(a, b), Vector2.dot(a, b))) * (180 / pi)
