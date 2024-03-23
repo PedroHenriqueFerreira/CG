@@ -24,7 +24,7 @@ class Polygon:
         return Vector2(x, y)
 
     def triangulate(self, polygon: list[Vector2]):
-        triangles = []
+        triangles: list[Vector2] = []
         
         if self.isClockwise(polygon):
             polygon = polygon[::-1]
@@ -184,7 +184,6 @@ class Map:
                 if properties.get('leisure') == 'park':
                     continue
 
-
                 coords_ = []
 
                 for coord in coords:
@@ -234,6 +233,12 @@ class Map:
                     'wetland',
                 ):
                     type_ = 'grass'
+
+                if properties.get('natural') in (
+                    'beach',
+                    'sand'
+                ):
+                    type_ = 'sand'
 
                 self.polygons.append(Polygon(name_, coords_, type_))
 

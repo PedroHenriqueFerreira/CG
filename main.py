@@ -8,13 +8,14 @@ from rgb import hexToRGB, hexToRGBA
 location = Map('russas.geojson')
 
 is_dragging = False
-last_click_pos = Vector2(0, 0)
+
+click_pos = Vector2(0, 0)
+click_time = 0
 
 def initializeGL():
     glClearColor(*hexToRGBA('#F8F7F7', 1))
 
     glEnable(GL_POINT_SMOOTH)
-    glEnable(GL_POLYGON_SMOOTH)
     glLineWidth(2)
     glPointSize(5)
 
@@ -42,11 +43,13 @@ def paintGL():
     glOrtho(location.min.x, location.max.x, location.min.y, location.max.y, -1, 1)
 
     # DRAW POLYGONS
-    for polygon in location.polygons:
+    for polygon in location.polygons:        
         if polygon.type == 'grass':
             glColor3f(*hexToRGB('#D3F8E2'))
         elif polygon.type == 'water':
             glColor3f(*hexToRGB('#90DAEE'))
+        elif polygon.type == 'sand':
+            glColor3f(*hexToRGB('#F7ECCF'))
         else:
             glColor3f(*hexToRGB('#E8E9ED'))
                     
@@ -92,7 +95,7 @@ def paintGL():
         
     glFlush()
 
-def normalizeXY(coord: Vector2):
+def normalizeCoord(coord: Vector2):
     window = Vector2(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT))
     coord = Vector2(coord.x, window.y - coord.y)
 
@@ -100,34 +103,46 @@ def normalizeXY(coord: Vector2):
 
     return (coord / window) * delta + location.min
 
+def zoomGL(scale: float, coord: Vector2):
+    norm = normalizeCoord(coord)
+    
+    location.min += (norm - location.min) * scale
+    location.max -= (location.max - norm) * scale
+    
+    glutPostRedisplay()
 
-def mouseGL(button, state, x, y):
+def mouseGL(button: int, state: int, x: int, y: int):
+    global click_pos, is_dragging, click_time
+    
+    # SCROLL EVENT
     if button in (3, 4) and state == GLUT_DOWN:
-        norm = normalizeXY(Vector2(x, y))
-
         scale = 0.1 if button == 3 else -0.1
+        
+        zoomGL(scale, Vector2(x, y))
 
-        location.min += (norm - location.min) * scale
-        location.max -= (location.max - norm) * scale
-
-        glutPostRedisplay()
-
+    # DRAGGING EVENT
     if button == GLUT_LEFT_BUTTON:
-        global last_click_pos, is_dragging
-
-        if state == GLUT_DOWN:
+        if state == GLUT_DOWN:      
             is_dragging = True
-            last_click_pos = normalizeXY(Vector2(x, y))
+            click_pos = normalizeCoord(Vector2(x, y))
         else:
             is_dragging = False
-            last_click_pos = 0, 0
-
+            click_pos = 0, 0
+        
+    # DOUBLE CLICK EVENT    
+    if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
+        current_time = glutGet(GLUT_ELAPSED_TIME)
+        
+        if current_time - click_time < 500:
+            zoomGL(0.5, Vector2(x, y))
+        else:
+            click_time = current_time
 
 def motionGL(x, y):
     if is_dragging:
-        norm = normalizeXY(Vector2(x, y))
+        norm = normalizeCoord(Vector2(x, y))
 
-        delta = (norm - last_click_pos) * -1
+        delta = (norm - click_pos) * -1
 
         location.min += delta
         location.max += delta
