@@ -1,4 +1,3 @@
-from math import pi, atan2
 from typing import Union
 
 ScalarType = Union[int, float]
@@ -98,6 +97,5 @@ class Vector2:
     def cross(a: 'Vector2', b: 'Vector2'):
         return a.x * b.y - a.y * b.x
     
-    @staticmethod
-    def angle(a: 'Vector2', b: 'Vector2'):
-        return (pi + atan2(Vector2.cross(a, b), Vector2.dot(a, b))) * (180 / pi)
+    def closest(self, vectors: list['Vector2']):
+        return min(vectors, key=lambda v: (self - v).module())

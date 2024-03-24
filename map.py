@@ -1,3 +1,4 @@
+import math
 import json
 
 from vector import Vector2
@@ -14,6 +15,21 @@ class Polygon:
         self.triangles = [self.triangulate(coord) for coord in coords]
 
         self.type = type
+
+        self.min = self.min()
+        self.max = self.max()
+
+    def min(self):
+        x = min([point.x for coord in self.coords for point in coord])
+        y = min([point.y for coord in self.coords for point in coord])
+
+        return Vector2(x, y)
+
+    def max(self):
+        x = max([point.x for coord in self.coords for point in coord])
+        y = max([point.y for coord in self.coords for point in coord])
+
+        return Vector2(x, y)
 
     def centroid(self):
         size = sum([len(coord) for coord in self.coords])
@@ -106,26 +122,27 @@ class Polygon:
             
         return True  
 
-LINE_WIDTH = 0.00005
+WIDTH = 0.00005
 
 class Line:
     def __init__(self, name: str | None, coords: list[Vector2] | None = None):
         self.name = name
         self.coords = coords
-        self.quads: list[Vector2] = self.fourangulate(coords)
+        
+        self.quads = self.fourangulate(coords)
 
     def fourangulate(self, coords: list[Vector2]):
-        quads = []
+        quads: list[Vector2] = []
         
         for prev, curr, next in zip(coords[:-1], coords[1:], coords[2:] + [None]):
             prev_curr = curr - prev
             
             prev_curr_normal = Vector2(-prev_curr.y, prev_curr.x).normalize()
             
-            p0 = prev + prev_curr_normal * (LINE_WIDTH / 2)
-            p1 = prev - prev_curr_normal * (LINE_WIDTH / 2)
-            p2 = curr - prev_curr_normal * (LINE_WIDTH / 2)
-            p3 = curr + prev_curr_normal * (LINE_WIDTH / 2)
+            p0 = prev + prev_curr_normal * (WIDTH / 2)
+            p1 = prev - prev_curr_normal * (WIDTH / 2)
+            p2 = curr - prev_curr_normal * (WIDTH / 2)
+            p3 = curr + prev_curr_normal * (WIDTH / 2)
             
             quads.extend([p0, p1, p2, p3])
             
@@ -136,12 +153,10 @@ class Line:
             
             curr_next_normal = Vector2(-curr_next.y, curr_next.x).normalize()
             
-            p4 = curr - prev_curr_normal * (LINE_WIDTH / 2)
-            p5 = curr + prev_curr_normal * (LINE_WIDTH / 2)
-            p6 = next + curr_next_normal * (LINE_WIDTH / 2)
-            p7 = next - curr_next_normal * (LINE_WIDTH / 2)
+            p4 = curr + curr_next_normal * (WIDTH / 2)
+            p5 = curr - curr_next_normal * (WIDTH / 2)
             
-            quads.extend([p4, p5, p6, p7])
+            quads.extend([p2, p3, p4, p5])
             
         return quads
             

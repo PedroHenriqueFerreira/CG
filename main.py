@@ -7,19 +7,20 @@ from rgb import hexToRGB, hexToRGBA
 
 location = Map('russas.geojson')
 
-is_dragging = False
-
 click_pos = Vector2(0, 0)
-click_time = 0
+is_moving = False
+
+initial = None
+final = None
 
 def initializeGL():
     glClearColor(*hexToRGBA('#F8F7F7', 1))
 
     glEnable(GL_POINT_SMOOTH)
     glLineWidth(2)
-    glPointSize(5)
+    glPointSize(8)
 
-def textGL(coord: Vector2, text: str):
+def textWidthGL(text: str):
     text_width = 0
     
     for char in text:
@@ -27,7 +28,12 @@ def textGL(coord: Vector2, text: str):
     
     window_width = glutGet(GLUT_WINDOW_WIDTH)
     
-    x = coord.x - (text_width / window_width) * (location.max.x - location.min.x) / 2
+    return (text_width / window_width) * (location.max.x - location.min.x)
+
+def textGL(coord: Vector2, text: str):
+    text_width = textWidthGL(text) / 2
+    
+    x = coord.x - text_width
     y = coord.y
     
     glRasterPos2f(x, y)
@@ -85,17 +91,32 @@ def paintGL():
 
         glEnd()
      
+    if initial is not None:
+        glColor3f(*hexToRGB('#FF0000'))
+        glBegin(GL_POINTS)
+        glVertex2f(initial.x, initial.y)
+        glEnd()
+        
+    if final is not None:
+        glColor3f(*hexToRGB('#00FF00'))
+        glBegin(GL_POINTS)
+        glVertex2f(final.x, final.y)
+        glEnd()
+     
     # DRAW POLYGONS NAMES
     glColor3f(*hexToRGB('#7D7D7D'))
     for polygon in location.polygons:
         if polygon.name is None:
+            continue
+    
+        if (polygon.max - polygon.min).module() < textWidthGL(polygon.name):
             continue
         
         textGL(polygon.centroid(), polygon.name)
         
     glFlush()
 
-def normalizeCoord(coord: Vector2):
+def normalizeGL(coord: Vector2):
     window = Vector2(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT))
     coord = Vector2(coord.x, window.y - coord.y)
 
@@ -103,51 +124,51 @@ def normalizeCoord(coord: Vector2):
 
     return (coord / window) * delta + location.min
 
-def zoomGL(scale: float, coord: Vector2):
-    norm = normalizeCoord(coord)
-    
-    location.min += (norm - location.min) * scale
-    location.max -= (location.max - norm) * scale
-    
-    glutPostRedisplay()
-
 def mouseGL(button: int, state: int, x: int, y: int):
-    global click_pos, is_dragging, click_time
+    global click_pos, is_moving, initial, final
     
-    # SCROLL EVENT
+    # ZOOM EVENT
     if button in (3, 4) and state == GLUT_DOWN:
         scale = 0.1 if button == 3 else -0.1
         
-        zoomGL(scale, Vector2(x, y))
-
-    # DRAGGING EVENT
-    if button == GLUT_LEFT_BUTTON:
-        if state == GLUT_DOWN:      
-            is_dragging = True
-            click_pos = normalizeCoord(Vector2(x, y))
-        else:
-            is_dragging = False
-            click_pos = 0, 0
+        norm = normalizeGL(Vector2(x, y))
+    
+        location.min += (norm - location.min) * scale
+        location.max -= (location.max - norm) * scale
         
-    # DOUBLE CLICK EVENT    
-    if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
-        current_time = glutGet(GLUT_ELAPSED_TIME)
-        
-        if current_time - click_time < 500:
-            zoomGL(0.5, Vector2(x, y))
-        else:
-            click_time = current_time
-
-def motionGL(x, y):
-    if is_dragging:
-        norm = normalizeCoord(Vector2(x, y))
-
-        delta = (norm - click_pos) * -1
-
-        location.min += delta
-        location.max += delta
-
         glutPostRedisplay()
+
+    if button == GLUT_LEFT_BUTTON:
+        # DRAGGING EVENT
+        if state == GLUT_DOWN:
+            click_pos = normalizeGL(Vector2(x, y))
+            
+            is_moving = False
+            
+        # CLICK EVENT
+        elif is_moving is False:
+            norm = normalizeGL(Vector2(x, y))
+            
+            if initial is None:
+                initial = norm.closest([point for line in location.lines for point in line.coords])
+            else:
+                final = norm.closest([point for line in location.lines for point in line.coords])
+                
+            glutPostRedisplay()
+        
+def motionGL(x: int, y: int):
+    global is_moving
+
+    is_moving = True
+    
+    norm = normalizeGL(Vector2(x, y))
+
+    delta = (norm - click_pos) * -1
+
+    location.min += delta
+    location.max += delta
+
+    glutPostRedisplay()
 
 glutInit()
 glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB)
