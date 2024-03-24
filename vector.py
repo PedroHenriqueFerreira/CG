@@ -83,6 +83,15 @@ class Vector2:
         
         return other ** self
     
+    def __hash__(self):
+        return hash((self.x, self.y))
+    
+    def __eq__(self, other: 'Vector2'):
+        return self.x == other.x and self.y == other.y
+    
+    def __ne__(self, other: 'Vector2'):
+        return not self == other
+    
     def module(self):
         return (Vector2.dot(self, self)) ** 0.5
     

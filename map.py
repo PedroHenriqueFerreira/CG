@@ -12,12 +12,14 @@ class Polygon:
     ):
         self.name = name
         self.coords = coords
+        
         self.triangles = [self.triangulate(coord) for coord in coords]
 
         self.type = type
 
         self.min = self.min()
         self.max = self.max()
+        self.centroid = self.centroid()
 
     def min(self):
         x = min([point.x for coord in self.coords for point in coord])
@@ -122,8 +124,6 @@ class Polygon:
             
         return True  
 
-WIDTH = 0.00005
-
 class Line:
     def __init__(self, name: str | None, coords: list[Vector2] | None = None):
         self.name = name
@@ -132,6 +132,8 @@ class Line:
         self.quads = self.fourangulate(coords)
 
     def fourangulate(self, coords: list[Vector2]):
+        width = 0.00005
+        
         quads: list[Vector2] = []
         
         for prev, curr, next in zip(coords[:-1], coords[1:], coords[2:] + [None]):
@@ -139,10 +141,10 @@ class Line:
             
             prev_curr_normal = Vector2(-prev_curr.y, prev_curr.x).normalize()
             
-            p0 = prev + prev_curr_normal * (WIDTH / 2)
-            p1 = prev - prev_curr_normal * (WIDTH / 2)
-            p2 = curr - prev_curr_normal * (WIDTH / 2)
-            p3 = curr + prev_curr_normal * (WIDTH / 2)
+            p0 = prev + prev_curr_normal * (width / 2)
+            p1 = prev - prev_curr_normal * (width / 2)
+            p2 = curr - prev_curr_normal * (width / 2)
+            p3 = curr + prev_curr_normal * (width / 2)
             
             quads.extend([p0, p1, p2, p3])
             
@@ -153,19 +155,21 @@ class Line:
             
             curr_next_normal = Vector2(-curr_next.y, curr_next.x).normalize()
             
-            p4 = curr + curr_next_normal * (WIDTH / 2)
-            p5 = curr - curr_next_normal * (WIDTH / 2)
+            p4 = curr + curr_next_normal * (width / 2)
+            p5 = curr - curr_next_normal * (width / 2)
             
             quads.extend([p2, p3, p4, p5])
             
         return quads
-            
+     
 class Map:
     def __init__(self, file: str):
         self.file = file
 
         self.polygons: list[Polygon] = []
         self.lines: list[Line] = []
+        
+        self.relations: dict[Vector2, list[Vector2]] = {}
 
         self.min = Vector2(float('inf'), float('inf'))
         self.max = Vector2(float('-inf'), float('-inf'))
@@ -173,9 +177,9 @@ class Map:
         self.load()
 
     def __repr__(self):
-        return f'Map({self.file})'
+        return f'Map({self.file})'  
 
-    def updateMinMax(self, coord: Vector2):
+    def updateBorder(self, coord: Vector2):
         self.min.x = min(self.min.x, coord.x)
         self.max.x = max(self.max.x, coord.x)
         self.min.y = min(self.min.y, coord.y)
@@ -187,7 +191,7 @@ class Map:
 
         for feature in data['features']:
             type = feature['geometry']['type']
-            coords = feature['geometry']['coordinates']
+            coords: list[list[float]] = feature['geometry']['coordinates']
 
             properties = feature['properties']
             name_ = properties.get('name')
@@ -208,7 +212,7 @@ class Map:
                         point = Vector2(x, y)
 
                         coord_.append(point)
-                        self.updateMinMax(point)
+                        self.updateBorder(point)
 
                     coords_.append(coord_)
 
@@ -279,13 +283,34 @@ class Map:
                 ):
                     continue
 
-                coords_ = []
+                coords_: list[Vector2] = []
 
-                for x, y in coords:
-                    point = Vector2(x, y)
+                for prev, curr, next in zip([None] + coords[:-1], coords, coords[1:] + [None]):
+                    point = Vector2(*curr)
 
                     coords_.append(point)
-                    self.updateMinMax(point)
+                    self.updateBorder(point)
+                    
+                    if point not in self.relations:
+                        self.relations[point] = []
+                        
+                    if prev is not None:
+                        prev_point = Vector2(*prev)
+                        
+                        if prev_point not in self.relations:
+                            self.relations[prev_point] = []
+                        
+                        if prev_point not in self.relations[point]:
+                            self.relations[point].append(prev_point)
+                        
+                    if next is not None:
+                        next_point = Vector2(*next)
+                        
+                        if next_point not in self.relations:
+                            self.relations[next_point] = []
+                        
+                        if next_point not in self.relations[point]:
+                            self.relations[point].append(next_point)
 
                 self.lines.append(Line(name_, coords_))
 

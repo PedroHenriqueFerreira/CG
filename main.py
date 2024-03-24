@@ -3,7 +3,7 @@ from OpenGL.GLUT import *
 
 from map import Map
 from vector import Vector2
-from rgb import hexToRGB, hexToRGBA
+from rgb import hexToRGB, hexToRGBA, randomRGB
 
 location = Map('russas.geojson')
 
@@ -29,17 +29,6 @@ def textWidthGL(text: str):
     window_width = glutGet(GLUT_WINDOW_WIDTH)
     
     return (text_width / window_width) * (location.max.x - location.min.x)
-
-def textGL(coord: Vector2, text: str):
-    text_width = textWidthGL(text) / 2
-    
-    x = coord.x - text_width
-    y = coord.y
-    
-    glRasterPos2f(x, y)
-
-    for char in text:
-        glutBitmapCharacter(GLUT_BITMAP_8_BY_13, ord(char))
 
 def paintGL():
     glClear(GL_COLOR_BUFFER_BIT)
@@ -91,17 +80,17 @@ def paintGL():
 
         glEnd()
      
+    # DRAW POINTS
+    glBegin(GL_POINTS)
     if initial is not None:
         glColor3f(*hexToRGB('#FF0000'))
-        glBegin(GL_POINTS)
         glVertex2f(initial.x, initial.y)
-        glEnd()
         
     if final is not None:
         glColor3f(*hexToRGB('#00FF00'))
-        glBegin(GL_POINTS)
         glVertex2f(final.x, final.y)
-        glEnd()
+
+    glEnd()
      
     # DRAW POLYGONS NAMES
     glColor3f(*hexToRGB('#7D7D7D'))
@@ -109,10 +98,19 @@ def paintGL():
         if polygon.name is None:
             continue
     
-        if (polygon.max - polygon.min).module() < textWidthGL(polygon.name):
+        min = polygon.min
+        max = polygon.max
+        centroid = polygon.centroid
+        
+        text_width = textWidthGL(polygon.name)
+        
+        if (max - min).module() < text_width:
             continue
         
-        textGL(polygon.centroid(), polygon.name)
+        glRasterPos2f(centroid.x - text_width / 2, centroid.y)
+
+        for char in polygon.name:
+            glutBitmapCharacter(GLUT_BITMAP_8_BY_13, ord(char))
         
     glFlush()
 
