@@ -5,6 +5,8 @@ from map import Map
 from vector import Vector2
 from rgb import hexToRGB, hexToRGBA, randomRGB
 
+from astar import aStar
+
 location = Map('russas.geojson')
 
 click_pos = Vector2(0, 0)
@@ -72,25 +74,38 @@ def paintGL():
 
     # DRAW LINES
     glColor3f(*hexToRGB('#B1BFCD'))
+    glBegin(GL_QUADS)
     for line in location.lines:
-        glBegin(GL_QUADS)
-
-        for point in line.quads:
-            glVertex2f(point.x, point.y)
-
-        glEnd()
+        for i, quad in enumerate(line.quads):
+            if i < len(line.quads) - 1:
+                others = [quad[2], quad[3], line.quads[i + 1][0], line.quads[i + 1][1]]
+            else:
+                others = []
+            
+            for point in quad + others:
+                glVertex2f(point.x, point.y)
+    glEnd()
      
     # DRAW POINTS
-    glBegin(GL_POINTS)
     if initial is not None:
+        glBegin(GL_POINTS)
         glColor3f(*hexToRGB('#FF0000'))
         glVertex2f(initial.x, initial.y)
+        glEnd()
         
     if final is not None:
+        glBegin(GL_POINTS)
         glColor3f(*hexToRGB('#00FF00'))
         glVertex2f(final.x, final.y)
+        glEnd()
 
-    glEnd()
+        path = aStar(location.relations, initial, final)
+
+        glBegin(GL_LINE_STRIP)
+        glColor3f(*hexToRGB('#FF0000'))
+        for point in path:
+            glVertex2f(point.x, point.y)
+        glEnd()
      
     # DRAW POLYGONS NAMES
     glColor3f(*hexToRGB('#7D7D7D'))
@@ -104,7 +119,7 @@ def paintGL():
         
         text_width = textWidthGL(polygon.name)
         
-        if (max - min).module() < text_width:
+        if Vector2.distance(min, max) < text_width:
             continue
         
         glRasterPos2f(centroid.x - text_width / 2, centroid.y)

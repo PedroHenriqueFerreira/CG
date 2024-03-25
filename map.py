@@ -134,9 +134,9 @@ class Line:
     def fourangulate(self, coords: list[Vector2]):
         width = 0.00005
         
-        quads: list[Vector2] = []
+        quads: list[list[Vector2]] = []
         
-        for prev, curr, next in zip(coords[:-1], coords[1:], coords[2:] + [None]):
+        for prev, curr in zip(coords[:-1], coords[1:]):
             prev_curr = curr - prev
             
             prev_curr_normal = Vector2(-prev_curr.y, prev_curr.x).normalize()
@@ -146,19 +146,7 @@ class Line:
             p2 = curr - prev_curr_normal * (width / 2)
             p3 = curr + prev_curr_normal * (width / 2)
             
-            quads.extend([p0, p1, p2, p3])
-            
-            if next is None:
-                continue
-            
-            curr_next = next - curr
-            
-            curr_next_normal = Vector2(-curr_next.y, curr_next.x).normalize()
-            
-            p4 = curr + curr_next_normal * (width / 2)
-            p5 = curr - curr_next_normal * (width / 2)
-            
-            quads.extend([p2, p3, p4, p5])
+            quads.append([p0, p1, p2, p3])
             
         return quads
      

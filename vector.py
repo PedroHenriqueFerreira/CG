@@ -1,4 +1,5 @@
 from typing import Union
+from math import radians
 
 ScalarType = Union[int, float]
 OtherType = Union[ScalarType, 'Vector2']
@@ -92,11 +93,18 @@ class Vector2:
     def __ne__(self, other: 'Vector2'):
         return not self == other
     
-    def module(self):
+    def radians(self):
+        return Vector2(radians(self.x), radians(self.y))
+    
+    def module(self) -> float:
         return (Vector2.dot(self, self)) ** 0.5
     
     def normalize(self):
         return self / self.module()
+
+    @staticmethod
+    def distance(a: 'Vector2', b: 'Vector2'):
+        return (b - a).module()
 
     @staticmethod
     def dot(a: 'Vector2', b: 'Vector2'):
@@ -107,4 +115,4 @@ class Vector2:
         return a.x * b.y - a.y * b.x
     
     def closest(self, vectors: list['Vector2']):
-        return min(vectors, key=lambda v: (self - v).module())
+        return min(vectors, key=lambda v: Vector2.distance(self, v))
