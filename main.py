@@ -3,7 +3,7 @@ from OpenGL.GLUT import *
 
 from map import Map
 from vector import Vector2
-from rgb import hexToRGB, hexToRGBA, randomRGB
+from rgb import hexToRGB, hexToRGBA
 
 from astar import aStar
 
@@ -12,8 +12,11 @@ location = Map('russas.geojson')
 click_pos = Vector2(0, 0)
 is_moving = False
 
-initial = None
-final = None
+path: list[Vector2] | None = None
+distance: float = 0
+
+start_pos: Vector2 | None = None
+goal_pos: Vector2 | None = None
 
 def initializeGL():
     glClearColor(*hexToRGBA('#F8F7F7', 1))
@@ -34,12 +37,13 @@ def textWidthGL(text: str):
 
 def paintGL():
     glClear(GL_COLOR_BUFFER_BIT)
-
+    
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     glOrtho(location.min.x, location.max.x, location.min.y, location.max.y, -1, 1)
 
     # DRAW POLYGONS
+    glBegin(GL_TRIANGLES)
     for polygon in location.polygons:        
         if polygon.type == 'grass':
             glColor3f(*hexToRGB('#D3F8E2'))
@@ -51,12 +55,9 @@ def paintGL():
             glColor3f(*hexToRGB('#E8E9ED'))
                     
         for coord in polygon.triangles:
-            glBegin(GL_TRIANGLES)
-            
             for point in coord:
                 glVertex2f(point.x, point.y)
-
-            glEnd()
+    glEnd()
 
     # DRAW BUILDING BORDERS
     glColor3f(*hexToRGB('#D9DBE7'))
@@ -73,10 +74,18 @@ def paintGL():
             glEnd()
 
     # DRAW LINES
-    glColor3f(*hexToRGB('#B1BFCD'))
     glBegin(GL_QUADS)
     for line in location.lines:
         for i, quad in enumerate(line.quads):
+            glColor3f(*hexToRGB('#B1BFCD'))
+            if path is not None:
+                curr = line.coords[i]
+                next = line.coords[i + 1] if i < len(line.coords) - 1 else None
+                
+                if next is not None:
+                    if next in path and curr in path:
+                        glColor3f(*hexToRGB('#FF0000'))
+            
             if i < len(line.quads) - 1:
                 others = [quad[2], quad[3], line.quads[i + 1][0], line.quads[i + 1][1]]
             else:
@@ -87,27 +96,26 @@ def paintGL():
     glEnd()
      
     # DRAW POINTS
-    if initial is not None:
-        glBegin(GL_POINTS)
-        glColor3f(*hexToRGB('#FF0000'))
-        glVertex2f(initial.x, initial.y)
-        glEnd()
-        
-    if final is not None:
-        glBegin(GL_POINTS)
-        glColor3f(*hexToRGB('#00FF00'))
-        glVertex2f(final.x, final.y)
-        glEnd()
-
-        path = aStar(location.relations, initial, final)
-
-        glBegin(GL_LINE_STRIP)
-        glColor3f(*hexToRGB('#FF0000'))
-        for point in path:
-            glVertex2f(point.x, point.y)
-        glEnd()
+    glColor3f(*hexToRGB('#FF0000'))
+    glBegin(GL_POINTS)
+    
+    if start_pos is not None:
+        glVertex2f(start_pos.x, start_pos.y)
+    
+    if goal_pos is not None:
+        glVertex2f(goal_pos.x, goal_pos.y)    
+    
+    glEnd()
+    
+    # DRAW PATH
+    # if path is not None:
+    #     glBegin(GL_LINE_STRIP)
+    #     for point in path:
+    #         glVertex2f(point.x, point.y)
+    #     glEnd()
      
     # DRAW POLYGONS NAMES
+    
     glColor3f(*hexToRGB('#7D7D7D'))
     for polygon in location.polygons:
         if polygon.name is None:
@@ -138,7 +146,7 @@ def normalizeGL(coord: Vector2):
     return (coord / window) * delta + location.min
 
 def mouseGL(button: int, state: int, x: int, y: int):
-    global click_pos, is_moving, initial, final
+    global click_pos, is_moving, path, distance, start_pos, goal_pos
     
     # ZOOM EVENT
     if button in (3, 4) and state == GLUT_DOWN:
@@ -151,23 +159,37 @@ def mouseGL(button: int, state: int, x: int, y: int):
         
         glutPostRedisplay()
 
-    if button == GLUT_LEFT_BUTTON:
-        # DRAGGING EVENT
-        if state == GLUT_DOWN:
-            click_pos = normalizeGL(Vector2(x, y))
+    # DRAGGING EVENT
+    if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
+        click_pos = normalizeGL(Vector2(x, y))
             
-            is_moving = False
+        is_moving = False
+
+    # CLICK EVENT
+    if button == GLUT_LEFT_BUTTON and state == GLUT_UP and not is_moving:
+        norm = normalizeGL(Vector2(x, y))
+        
+        point = norm.closest(location.graph.keys())
+        
+        path = None
+        distance = 0
+        
+        if start_pos is None:
+            start_pos = point
+        elif start_pos == point:
+            start_pos = None
+        elif goal_pos is None or goal_pos != point:
+            goal_pos = point
+        elif goal_pos == point:
+            goal_pos = None
+        
+        if start_pos is None and goal_pos is not None:
+            start_pos, goal_pos = goal_pos, start_pos
             
-        # CLICK EVENT
-        elif is_moving is False:
-            norm = normalizeGL(Vector2(x, y))
+        if start_pos is not None and goal_pos is not None:
+            path, distance = aStar(location.graph, start_pos, goal_pos)
             
-            if initial is None:
-                initial = norm.closest([point for line in location.lines for point in line.coords])
-            else:
-                final = norm.closest([point for line in location.lines for point in line.coords])
-                
-            glutPostRedisplay()
+        glutPostRedisplay()
         
 def motionGL(x: int, y: int):
     global is_moving

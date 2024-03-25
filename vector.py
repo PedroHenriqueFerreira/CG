@@ -1,5 +1,5 @@
 from typing import Union
-from math import radians
+from math import radians, sin, cos, asin, sqrt
 
 ScalarType = Union[int, float]
 OtherType = Union[ScalarType, 'Vector2']
@@ -105,6 +105,19 @@ class Vector2:
     @staticmethod
     def distance(a: 'Vector2', b: 'Vector2'):
         return (b - a).module()
+
+    @staticmethod
+    def haversine(start: 'Vector2', goal: 'Vector2'):
+        start = start.radians()
+        goal = goal.radians()
+        
+        delta = goal - start
+        
+        a = sin(delta.x / 2) ** 2 + cos(start.x) * cos(goal.x) * sin(delta.y / 2) ** 2
+        c = 2 * asin(sqrt(a))
+        r = 6371.0088
+
+        return r * c
 
     @staticmethod
     def dot(a: 'Vector2', b: 'Vector2'):

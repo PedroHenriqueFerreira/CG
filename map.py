@@ -157,7 +157,7 @@ class Map:
         self.polygons: list[Polygon] = []
         self.lines: list[Line] = []
         
-        self.relations: dict[Vector2, list[Vector2]] = {}
+        self.graph: dict[Vector2, list[Vector2]] = {}
 
         self.min = Vector2(float('inf'), float('inf'))
         self.max = Vector2(float('-inf'), float('-inf'))
@@ -279,26 +279,26 @@ class Map:
                     coords_.append(point)
                     self.updateBorder(point)
                     
-                    if point not in self.relations:
-                        self.relations[point] = []
+                    if point not in self.graph:
+                        self.graph[point] = []
                         
                     if prev is not None:
                         prev_point = Vector2(*prev)
                         
-                        if prev_point not in self.relations:
-                            self.relations[prev_point] = []
+                        if prev_point not in self.graph:
+                            self.graph[prev_point] = []
                         
-                        if prev_point not in self.relations[point]:
-                            self.relations[point].append(prev_point)
+                        if prev_point not in self.graph[point]:
+                            self.graph[point].append(prev_point)
                         
                     if next is not None:
                         next_point = Vector2(*next)
                         
-                        if next_point not in self.relations:
-                            self.relations[next_point] = []
+                        if next_point not in self.graph:
+                            self.graph[next_point] = []
                         
-                        if next_point not in self.relations[point]:
-                            self.relations[point].append(next_point)
+                        if next_point not in self.graph[point]:
+                            self.graph[point].append(next_point)
 
                 self.lines.append(Line(name_, coords_))
 
