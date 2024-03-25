@@ -1,5 +1,8 @@
-import math
 import json
+
+from math import radians, sin, cos
+
+from settings import LINE_WIDTH
 
 from vector import Vector2
 
@@ -129,27 +132,25 @@ class Line:
         self.name = name
         self.coords = coords
         
-        self.quads = self.fourangulate(coords)
+        self.quads = self.fourangulate()
 
-    def fourangulate(self, coords: list[Vector2]):
-        width = 0.00005
-        
+    def fourangulate(self):
         quads: list[list[Vector2]] = []
         
-        for prev, curr in zip(coords[:-1], coords[1:]):
-            prev_curr = curr - prev
+        for prev, curr in zip(self.coords[:-1], self.coords[1:]):
+            delta = curr - prev
             
-            prev_curr_normal = Vector2(-prev_curr.y, prev_curr.x).normalize()
+            normal = Vector2(-delta.y, delta.x).normalize()
             
-            p0 = prev + prev_curr_normal * (width / 2)
-            p1 = prev - prev_curr_normal * (width / 2)
-            p2 = curr - prev_curr_normal * (width / 2)
-            p3 = curr + prev_curr_normal * (width / 2)
+            q0 = prev + normal * (LINE_WIDTH / 2)
+            q1 = prev - normal * (LINE_WIDTH / 2)
+            q2 = curr - normal * (LINE_WIDTH / 2)
+            q3 = curr + normal * (LINE_WIDTH / 2)
             
-            quads.append([p0, p1, p2, p3])
+            quads.append([q0, q1, q2, q3])
             
         return quads
-     
+                
 class Map:
     def __init__(self, file: str):
         self.file = file
@@ -285,17 +286,11 @@ class Map:
                     if prev is not None:
                         prev_point = Vector2(*prev)
                         
-                        if prev_point not in self.graph:
-                            self.graph[prev_point] = []
-                        
                         if prev_point not in self.graph[point]:
                             self.graph[point].append(prev_point)
                         
                     if next is not None:
                         next_point = Vector2(*next)
-                        
-                        if next_point not in self.graph:
-                            self.graph[next_point] = []
                         
                         if next_point not in self.graph[point]:
                             self.graph[point].append(next_point)
@@ -304,3 +299,5 @@ class Map:
 
 if __name__ == '__main__':
     location = Map('russas.geojson')
+    
+    print(len(location.lines[0].quads), len(location.lines[0].coords))

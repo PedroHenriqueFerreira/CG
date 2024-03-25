@@ -74,48 +74,58 @@ def paintGL():
             glEnd()
 
     # DRAW LINES
+    glColor3f(*hexToRGB('#B1BFCD'))
     glBegin(GL_QUADS)
     for line in location.lines:
-        for i, quad in enumerate(line.quads):
-            glColor3f(*hexToRGB('#B1BFCD'))
-            if path is not None:
-                curr = line.coords[i]
-                next = line.coords[i + 1] if i < len(line.coords) - 1 else None
-                
-                if next is not None:
-                    if next in path and curr in path:
-                        glColor3f(*hexToRGB('#FF0000'))
+        for quad, next in zip(line.quads, line.quads[1:] + [None]):
+            for point in quad:
+                glVertex2f(point.x, point.y)
             
-            if i < len(line.quads) - 1:
-                others = [quad[2], quad[3], line.quads[i + 1][0], line.quads[i + 1][1]]
-            else:
-                others = []
+            if next is  None:
+                continue
             
-            for point in quad + others:
+            for point in [quad[2], quad[3], next[0], next[1]]:
                 glVertex2f(point.x, point.y)
     glEnd()
      
-    # DRAW POINTS
-    glColor3f(*hexToRGB('#FF0000'))
-    glBegin(GL_POINTS)
+    glColor3f(*hexToRGB('#000000'))
     
+    # DRAW POINTS
+    glBegin(GL_POINTS)
     if start_pos is not None:
         glVertex2f(start_pos.x, start_pos.y)
-    
     if goal_pos is not None:
         glVertex2f(goal_pos.x, goal_pos.y)    
-    
     glEnd()
     
-    # DRAW PATH
-    # if path is not None:
-    #     glBegin(GL_LINE_STRIP)
-    #     for point in path:
-    #         glVertex2f(point.x, point.y)
-    #     glEnd()
+    #DRAW PATH
+    if path is not None:
+        glBegin(GL_QUADS)
+        
+        for line in location.lines:
+            for i, (prev, curr, quad) in enumerate(zip(line.coords[:-1], line.coords[1:], line.quads)):
+                if prev not in path or curr not in path:
+                    continue
+                
+                for point in quad:
+                    glVertex2f(point.x, point.y)
+            
+                if i >= len(line.coords) - 2:
+                    continue
+                
+                next = line.coords[i + 2]
+                
+                if next not in path:
+                    continue
+                
+                next_quad = line.quads[i + 1]
+                
+                for point in [quad[2], quad[3], next_quad[0], next_quad[1]]:
+                    glVertex2f(point.x, point.y)
+            
+        glEnd()
      
     # DRAW POLYGONS NAMES
-    
     glColor3f(*hexToRGB('#7D7D7D'))
     for polygon in location.polygons:
         if polygon.name is None:

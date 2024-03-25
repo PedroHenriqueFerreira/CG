@@ -96,15 +96,15 @@ class Vector2:
     def radians(self):
         return Vector2(radians(self.x), radians(self.y))
     
-    def module(self) -> float:
-        return (Vector2.dot(self, self)) ** 0.5
-    
     def normalize(self):
-        return self / self.module()
+        return self / (self.x ** 2 + self.y ** 2) ** 0.5
 
+    def closest(self, vectors: list['Vector2']):
+        return min(vectors, key=lambda v: Vector2.distance(self, v))
+    
     @staticmethod
-    def distance(a: 'Vector2', b: 'Vector2'):
-        return (b - a).module()
+    def distance(a: 'Vector2', b: 'Vector2') -> ScalarType:
+        return ((b.x - a.x) ** 2 + (b.y - a.y) ** 2) ** 0.5
 
     @staticmethod
     def haversine(start: 'Vector2', goal: 'Vector2'):
@@ -118,14 +118,3 @@ class Vector2:
         r = 6371.0088
 
         return r * c
-
-    @staticmethod
-    def dot(a: 'Vector2', b: 'Vector2'):
-        return a.x * b.x + a.y * b.y
-
-    @staticmethod
-    def cross(a: 'Vector2', b: 'Vector2'):
-        return a.x * b.y - a.y * b.x
-    
-    def closest(self, vectors: list['Vector2']):
-        return min(vectors, key=lambda v: Vector2.distance(self, v))
