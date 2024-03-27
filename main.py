@@ -87,8 +87,8 @@ def paintGL():
             for point in [quad[2], quad[3], next[0], next[1]]:
                 glVertex2f(point.x, point.y)
     glEnd()
-     
-    glColor3f(*hexToRGB('#000000'))
+    
+    glColor3f(*hexToRGB('#FA0A44'))
     
     # DRAW POINTS
     glBegin(GL_POINTS)
@@ -198,6 +198,8 @@ def mouseGL(button: int, state: int, x: int, y: int):
             
         if start_pos is not None and goal_pos is not None:
             path, distance = aStar(location.graph, start_pos, goal_pos)
+            
+            print(distance)
             
         glutPostRedisplay()
         
