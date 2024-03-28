@@ -1,21 +1,19 @@
 import json
 
-from math import radians, sin, cos
-
 from settings import LINE_WIDTH
 
-from vector import Vector2
+from vec import Vec2
 
 class Polygon:
     def __init__(
-        self, 
-        name: str | None = None, 
-        coords: list[list[Vector2]] | None = None, 
+        self,
+        name: str | None = None,
+        coords: list[list[Vec2]] | None = None,
         type: str | None = None
     ):
         self.name = name
         self.coords = coords
-        
+
         self.triangles = [self.triangulate(coord) for coord in coords]
 
         self.type = type
@@ -28,147 +26,133 @@ class Polygon:
         x = min([point.x for coord in self.coords for point in coord])
         y = min([point.y for coord in self.coords for point in coord])
 
-        return Vector2(x, y)
+        return Vec2(x, y)
 
     def max(self):
         x = max([point.x for coord in self.coords for point in coord])
         y = max([point.y for coord in self.coords for point in coord])
 
-        return Vector2(x, y)
+        return Vec2(x, y)
 
     def centroid(self):
         size = sum([len(coord) for coord in self.coords])
-        
+
         x = sum([point.x for coord in self.coords for point in coord]) / size
         y = sum([point.y for coord in self.coords for point in coord]) / size
 
-        return Vector2(x, y)
+        return Vec2(x, y)
 
-    def triangulate(self, polygon: list[Vector2]):
-        triangles: list[Vector2] = []
-        
+    def triangulate(self, polygon: list[Vec2]):
+        triangles: list[Vec2] = []
+
         if self.isClockwise(polygon):
             polygon = polygon[::-1]
         else:
             polygon = polygon[:]
-        
+
         while len(polygon) >= 3:
             a = self.getEar(polygon)
             if a == []:
                 break
-            
+
             triangles.extend(a)
         return triangles
 
-    def isClockwise(self, polygon: list[Vector2]):
+    def isClockwise(self, polygon: list[Vec2]):
         # initialize sum with last element
         sum = (polygon[0].x - polygon[len(polygon) - 1].x) * (polygon[0].y + polygon[len(polygon) - 1].y)
-        
+
         # iterate over all other elements (0 to n-1)
         for i in range(len(polygon) - 1):
             sum += (polygon[i + 1].x - polygon[i].x) * (polygon[i + 1].y + polygon[i].y)
-        
+
         return sum > 0
 
-    def getEar(self, polygon: list[Vector2]):
+    def getEar(self, polygon: list[Vec2]):
         size = len(polygon)
-        
+
         if size < 3:
             return []
-        
+
         if size == 3:
             tri = [polygon[0], polygon[1], polygon[2]]
             del polygon[:]
             return tri
-        
+
         for i in range(size):
             tritest = False
-            
+
             p1 = polygon[(i - 1) % size]
             p2 = polygon[i % size]
             p3 = polygon[(i + 1) % size]
-            
+
             if self.isConvex(p1, p2, p3):
                 for x in polygon:
-                    if not (x in (p1, p2, p3)) and self.inTriangle(p1, p2, p3, x):
+                    if not (x in (p1, p2, p3)) and self.isInTriangle(p1, p2, p3, x):
                         tritest = True
-                        
+
                 if tritest == False:
                     del polygon[i % size]
                     return [p1, p2, p3]
         return []
 
-    def isConvex(self, a: Vector2, b: Vector2, c: Vector2):
+    def isConvex(self, a: Vec2, b: Vec2, c: Vec2):
         # only convex if traversing anti-clockwise!
         crossp = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)
-        
+
         if crossp >= 0:
-            return True 
-        
-        return False 
+            return True
 
-    def inTriangle(self, a: Vector2, b: Vector2, c: Vector2, p: Vector2):
-        L = [0, 0, 0]
-        eps = 0.0000001
-        # calculate barycentric coefficients for point p
-        # eps is needed as error correction since for very small distances denom->0
-        L[0] = ((b.y - c.y) * (p.x - c.x) + (c.x - b.x) * (p.y - c.y)) \
-            /(((b.y - c.y) * (a.x - c.x) + (c.x - b.x) * (a.y - c.y)) + eps)
-            
-        L[1] = ((c.y - a.y) * (p.x - c.x) + (a.x - c.x) * (p.y - c.y)) \
-            /(((b.y - c.y) * (a.x - c.x) + (c.x - b.x) * (a.y - c.y)) + eps)
-            
-        L[2] = 1 - L[0] - L[1]
-        
-        # check if p lies in triangle (a, b, c)
-        for x in L:
-            if x >= 1 or x <= 0:
-                return False  
-            
-        return True  
+        return False
 
+    def isInTriangle(self, a: Vec2, b: Vec2, c: Vec2, p: Vec2):
+        return (c.x - p.x) * (a.y - p.y) - (a.x - p.x) * (c.y - p.y) >= 0 and \
+                (a.x - p.x) * (b.y - p.y) - (b.x - p.x) * (a.y - p.y) >= 0 and \
+                (b.x - p.x) * (c.y - p.y) - (c.x - p.x) * (b.y - p.y) >= 0
+                
 class Line:
-    def __init__(self, name: str | None, coords: list[Vector2] | None = None):
+    def __init__(self, name: str | None, coords: list[Vec2] | None = None):
         self.name = name
         self.coords = coords
-        
+
         self.quads = self.fourangulate()
 
     def fourangulate(self):
-        quads: list[list[Vector2]] = []
-        
+        quads: list[list[Vec2]] = []
+
         for prev, curr in zip(self.coords[:-1], self.coords[1:]):
-            delta = curr - prev
-            
-            normal = Vector2(-delta.y, delta.x).normalize()
-            
+            delta = (curr - prev).normalize()
+
+            normal = Vec2(-delta.y, delta.x)
+
             q0 = prev + normal * (LINE_WIDTH / 2)
             q1 = prev - normal * (LINE_WIDTH / 2)
             q2 = curr - normal * (LINE_WIDTH / 2)
             q3 = curr + normal * (LINE_WIDTH / 2)
-            
+
             quads.append([q0, q1, q2, q3])
-            
+
         return quads
-                
+
+
 class Map:
     def __init__(self, file: str):
         self.file = file
 
         self.polygons: list[Polygon] = []
         self.lines: list[Line] = []
-        
-        self.graph: dict[Vector2, list[Vector2]] = {}
 
-        self.min = Vector2(float('inf'), float('inf'))
-        self.max = Vector2(float('-inf'), float('-inf'))
+        self.graph: dict[Vec2, list[Vec2]] = {}
+
+        self.min = Vec2(float('inf'), float('inf'))
+        self.max = Vec2(float('-inf'), float('-inf'))
 
         self.load()
 
     def __repr__(self):
-        return f'Map({self.file})'  
+        return f'Map({self.file})'
 
-    def updateBorder(self, coord: Vector2):
+    def updateBorder(self, coord: Vec2):
         self.min.x = min(self.min.x, coord.x)
         self.max.x = max(self.max.x, coord.x)
         self.min.y = min(self.min.y, coord.y)
@@ -188,7 +172,7 @@ class Map:
             if type == 'Polygon':
                 if properties.get('type') == 'boundary':
                     continue
-                
+
                 if properties.get('leisure') == 'park':
                     continue
 
@@ -198,7 +182,7 @@ class Map:
                     coord_ = []
 
                     for x, y in coord[:-1]:
-                        point = Vector2(x, y)
+                        point = Vec2(x, y)
 
                         coord_.append(point)
                         self.updateBorder(point)
@@ -272,32 +256,67 @@ class Map:
                 ):
                     continue
 
-                coords_: list[Vector2] = []
+                coords_: list[Vec2] = []
 
                 for prev, curr, next in zip([None] + coords[:-1], coords, coords[1:] + [None]):
-                    point = Vector2(*curr)
+                    point = Vec2(*curr)
 
                     coords_.append(point)
                     self.updateBorder(point)
-                    
+
                     if point not in self.graph:
                         self.graph[point] = []
-                        
+
                     if prev is not None:
-                        prev_point = Vector2(*prev)
-                        
+                        prev_point = Vec2(*prev)
+
                         if prev_point not in self.graph[point]:
                             self.graph[point].append(prev_point)
-                        
+
                     if next is not None:
-                        next_point = Vector2(*next)
-                        
+                        next_point = Vec2(*next)
+
                         if next_point not in self.graph[point]:
                             self.graph[point].append(next_point)
 
                 self.lines.append(Line(name_, coords_))
 
+    def aStar(self, start: Vec2, goal: Vec2):
+        openSet = {start}
+
+        cameFrom = {}
+
+        gScore: dict[Vec2, float] = {start: 0}
+        fScore = {start: Vec2.distance(start, goal)}
+
+        while len(openSet) > 0:
+            current = min(openSet, key=lambda x: fScore[x])
+
+            if current == goal:
+                total_path = [current]
+
+                while current in cameFrom:
+                    current = cameFrom[current]
+                    total_path.append(current)
+
+                return total_path, gScore[goal]
+
+
+            openSet.remove(current)
+
+            for neighbor in self.graph[current]:
+                tentative_gScore = gScore[current] + Vec2.haversine(current, neighbor)
+
+                if neighbor not in gScore or tentative_gScore < gScore[neighbor]:
+                    cameFrom[neighbor] = current
+                    gScore[neighbor] = tentative_gScore
+                    fScore[neighbor] = tentative_gScore + Vec2.distance(neighbor, goal)
+
+                    if neighbor not in openSet:
+                        openSet.add(neighbor)
+
+        return None, 0.0
+
+
 if __name__ == '__main__':
     location = Map('russas.geojson')
-    
-    print(len(location.lines[0].quads), len(location.lines[0].coords))
