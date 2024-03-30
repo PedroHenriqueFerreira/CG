@@ -35,7 +35,6 @@ def textWidthGL(text: str):
 
     return (text_width / window_width) * (location.max.x - location.min.x)
 
-
 def paintGL():
     glClear(GL_COLOR_BUFFER_BIT)
 
@@ -45,8 +44,11 @@ def paintGL():
             location.min.y, location.max.y, -1, 1)
 
     # DRAW POLYGONS
+    glBegin(GL_TRIANGLES)
     for polygon in location.polygons:
-        if polygon.type == 'grass':
+        if polygon.type == 'wall':
+            continue
+        elif polygon.type == 'grass':
             glColor3f(*hexToRGB('#D3F8E2'))
         elif polygon.type == 'water':
             glColor3f(*hexToRGB('#90DAEE'))
@@ -55,20 +57,26 @@ def paintGL():
         else:
             glColor3f(*hexToRGB('#E8E9ED'))
 
-        for coord in polygon.triangles:
-            glBegin(GL_TRIANGLES)
+        for point in polygon.triangles[0]:
+            glVertex2f(point.x, point.y)
+             
+    # DRAW HOLES
+    glColor3f(*hexToRGB('#F8F7F7'))
+    for polygon in location.polygons:   
+        for coord in polygon.triangles[1:]:
             for point in coord:
                 glVertex2f(point.x, point.y)
-            glEnd()
+                
+    glEnd()
 
     # DRAW BUILDING BORDERS
     glColor3f(*hexToRGB('#D9DBE7'))
     for polygon in location.polygons:
-        if polygon.type != 'building':
+        if polygon.type != 'building' and polygon.type != 'wall':
             continue
-
+        
         for coord in polygon.coords:
-            glBegin(GL_LINE_LOOP)
+            glBegin(GL_LINE_STRIP)
 
             for point in coord:
                 glVertex2f(point.x, point.y)
@@ -148,7 +156,6 @@ def paintGL():
             glutBitmapCharacter(GLUT_BITMAP_8_BY_13, ord(char))
 
     glFlush()
-
 
 def normalizeGL(coord: Vec2):
     window = Vec2(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT))

@@ -134,7 +134,6 @@ class Line:
 
         return quads
 
-
 class Map:
     def __init__(self, file: str):
         self.file = file
@@ -181,7 +180,7 @@ class Map:
                 for coord in coords:
                     coord_ = []
 
-                    for x, y in coord[:-1]:
+                    for x, y in coord:
                         point = Vec2(x, y)
 
                         coord_.append(point)
@@ -231,6 +230,17 @@ class Map:
                     'sand'
                 ):
                     type_ = 'sand'
+                
+                if properties.get('barrier') in (
+                    'city_wall',
+                    'ditch',
+                    'fence',
+                    'guard_rail',
+                    'handrail',
+                    'retaining_wall',
+                    'wall',
+                ):
+                    type_ = 'wall'
 
                 self.polygons.append(Polygon(name_, coords_, type_))
 

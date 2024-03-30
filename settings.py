@@ -1,1 +1,8 @@
+ZOOM_FACTOR = 0.1
+
 LINE_WIDTH = 0.00005
+
+
+COLORS = {
+    
+}

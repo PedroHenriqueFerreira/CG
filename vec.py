@@ -85,26 +85,14 @@ class Vec2:
 
         return other ** self
 
-    def __hash__(self):
-        return hash((self.x, self.y))
-
     def __eq__(self, other: 'Vec2'):
         return self.x == other.x and self.y == other.y
 
     def __ne__(self, other: 'Vec2'):
         return not self == other
 
-    def min(self, other: OtherType):
-        if isinstance(other, float | int):
-            other = Vec2(other, other)
-
-        return Vec2(min(self.x, other.x), min(self.y, other.y))
-
-    def max(self, other: OtherType):
-        if isinstance(other, float | int):
-            other = Vec2(other, other)
-
-        return Vec2(max(self.x, other.x), max(self.y, other.y))
+    def __hash__(self):
+        return hash((self.x, self.y))
 
     def radians(self):
         return Vec2(radians(self.x), radians(self.y))
@@ -114,6 +102,14 @@ class Vec2:
 
     def nearest(self, vectors: list['Vec2']):
         return min(vectors, key=lambda v: Vec2.distance(self, v))
+
+    @staticmethod
+    def min(*vectors: 'Vec2'):
+        return Vec2(min(v.x for v in vectors), min(v.y for v in vectors))
+
+    @staticmethod
+    def max(*vectors: 'Vec2'):
+        return Vec2(max(v.x for v in vectors), max(v.y for v in vectors))
 
     @staticmethod
     def distance(a: 'Vec2', b: 'Vec2') -> ScalarType:
