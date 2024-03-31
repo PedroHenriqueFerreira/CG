@@ -97,10 +97,7 @@ class Vec2:
     def radians(self):
         return Vec2(radians(self.x), radians(self.y))
 
-    def normalize(self):
-        if self.x == 0 and self.y == 0:
-            return self
-        
+    def normalize(self) -> 'Vec2':
         return self / (self.x ** 2 + self.y ** 2) ** 0.5
 
     def nearest(self, vectors: list['Vec2']):

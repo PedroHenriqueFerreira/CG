@@ -16,23 +16,23 @@ class LineString:
     def transform(self, coords: list[Vec2]):
         w = LINE_WIDTH / 2
         
-        triangles: list[list[Vec2]] = []
+        lines: list[list[Vec2]] = []
 
-        for prev, curr, next in zip(coords[:1] + coords[:-1], coords, coords[1:] + coords[-1:]):
-            t0 = (curr - prev).normalize()
-            t1 = (next - curr).normalize()
+        for prev, curr, next in zip([None] + coords[:-1], coords, coords[1:] + [None]):
+            t0 = Vec2(0, 0) if prev is None else (curr - prev).normalize()
+            t1 = Vec2(0, 0) if next is None else (next - curr).normalize()
             
             n0 = Vec2(-t0.y, t0.x)
             n1 = Vec2(-t1.y, t1.x)
             
-            if prev == curr:
-                triangles.append([
+            if prev is None:
+                lines.append([
                     curr + n1 * w, #- t1 * w,
                     curr - n1 * w, #- t1 * w,
                 ])
                  
-            elif curr == next:
-                triangles.append([
+            elif next is None:
+                lines.append([
                     curr + n0 * w, #+ t0 * w,
                     curr - n0 * w, #+ t0 * w,
                 ])
@@ -41,10 +41,16 @@ class LineString:
                     
                 dy = w / Vec2.dot(m, n1)
                 
-                triangles.append([
+                lines.append([
                     curr + m * dy,
                     curr - m * dy,
                 ])
+
+        triangles: list[list[Vec2]] = []
+        
+        for curr, next in zip(lines[:-1], lines[1:]):
+            triangles.append([curr[0], curr[1],  next[0]])
+            triangles.append([next[0], next[1], curr[1]])
 
         return triangles
     
