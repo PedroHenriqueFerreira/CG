@@ -9,29 +9,42 @@ class Point:
     
 class LineString:
     def __init__(self, coords: list[Vec2]):
-        self.coords = self.transform(coords)
+        self.coords = coords
+        
+        self.triangles = self.transform(coords)
     
     def transform(self, coords: list[Vec2]):
-        width = LINE_WIDTH / 2
+        w = LINE_WIDTH / 2
         
         triangles: list[list[Vec2]] = []
 
-        for curr, next in zip(coords[:-1], coords[1:]):
-            delta = (next - curr).normalize()
-
-            normal = Vec2(-delta.y, delta.x) * width
-
-            triangles.append([
-                next + normal,
-                curr + normal,
-                curr - normal,
-            ])
+        for prev, curr, next in zip(coords[:1] + coords[:-1], coords, coords[1:] + coords[-1:]):
+            t0 = (curr - prev).normalize()
+            t1 = (next - curr).normalize()
             
-            triangles.append([
-                curr - normal,
-                next - normal,
-                next + normal,
-            ])          
+            n0 = Vec2(-t0.y, t0.x)
+            n1 = Vec2(-t1.y, t1.x)
+            
+            if prev == curr:
+                triangles.append([
+                    curr + n1 * w, #- t1 * w,
+                    curr - n1 * w, #- t1 * w,
+                ])
+                 
+            elif curr == next:
+                triangles.append([
+                    curr + n0 * w, #+ t0 * w,
+                    curr - n0 * w, #+ t0 * w,
+                ])
+            else: 
+                m = (n0 + n1).normalize()
+                    
+                dy = w / Vec2.dot(m, n1)
+                
+                triangles.append([
+                    curr + m * dy,
+                    curr - m * dy,
+                ])
 
         return triangles
     
@@ -46,6 +59,8 @@ class Map:
         self.points: list[Point] = []
         self.line_strings: list[LineString] = []
         self.polygons: list[Polygon] = []
+        
+        self.graph: dict[Vec2, list[Vec2]] = {}
 
         self.min = Vec2(float('inf'), float('inf'))
         self.max = Vec2(float('-inf'), float('-inf'))
@@ -57,6 +72,8 @@ class Map:
             data = loads(f.read())
         
         for feature in data['features']:
+            properties = feature['properties']
+            
             type = feature['geometry']['type']
             coords = feature['geometry']['coordinates']
             
@@ -70,10 +87,21 @@ class Map:
                 
                 case 'LineString':
                     coords_ = [Vec2(*coord) for coord in coords]
+                    
                     self.line_strings.append(LineString(coords_))
                     
                     self.min = Vec2.min(self.min, *coords_)
                     self.max = Vec2.max(self.max, *coords_)
+                    
+                    for prev, curr, next in zip([None] + coords_[:-1], coords_, coords_[1:] + [None]):
+                        if curr not in self.graph:
+                            self.graph[curr] = []
+                            
+                        if prev and prev not in self.graph[curr]:
+                            self.graph[curr].append(prev)
+                    
+                        if next and next not in self.graph[curr]:
+                            self.graph[curr].append(next)
                 
                 case 'Polygon':
                     coords_ = [[Vec2(*point) for point in coord] for coord in coords]
@@ -82,8 +110,6 @@ class Map:
                     for coord_ in coords_:
                         self.min = Vec2.min(self.min, *coord_)
                         self.max = Vec2.max(self.max, *coord_)
-            
+        
 if __name__ == '__main__':
     location = Map('russas.geojson')
-    
-          

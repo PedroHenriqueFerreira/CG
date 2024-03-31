@@ -3,7 +3,7 @@ from OpenGL.GLUT import *
 
 from map2 import Map
 from vec import Vec2
-from rgb import hexToRGB, hexToRGBA
+from rgb import hexToRGB, hexToRGBA, randomRGB
 
 from settings import ZOOM_FACTOR
 
@@ -48,12 +48,12 @@ def paintGL():
 
     # DRAW LINES
     glColor3f(*hexToRGB('#B1BFCD'))
-    glBegin(GL_TRIANGLES)
-    for line in location.line_strings:   
-        for coord in line.coords:
-            for point in coord:
+    for line in location.line_strings:
+        glBegin(GL_TRIANGLES)
+        for triangle in line.triangles:
+            for point in triangle:
                 glVertex2f(point.x, point.y)
-    glEnd()
+        glEnd()
 
     glFlush()
 
