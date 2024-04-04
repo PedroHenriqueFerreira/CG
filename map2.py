@@ -171,7 +171,7 @@ class Map:
         self.line_strings: list[LineString] = []
         
         self.polygons: dict['str', list[Polygon]] = { 
-            'other': [], 'building': [], 'pitch': [], 'water': [], 'grass': [],
+            'other': [], 'building': [], 'water': [], 'grass': [],
         }
         
         self.graph: dict[Vec2, list[Vec2]] = {}
@@ -260,9 +260,6 @@ class Map:
                         'water',
                     ):
                         type_ = 'water'
-                    
-                    elif properties.get('leisure') == 'pitch':
-                        type_ = 'pitch'
                     
                     elif properties.get('building'):
                         type_ = 'building'

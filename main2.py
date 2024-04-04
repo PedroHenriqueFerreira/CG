@@ -20,18 +20,21 @@ def initializeGL():
     glLineWidth(2)
     glPointSize(8)
 
-def paintGL():
+def paintGL():    
     glClear(GL_COLOR_BUFFER_BIT)
 
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     glOrtho(min.x, max.x, min.y, max.y, -1, 1)
+
+    # glTranslatef((max.x + min.x) / 2, (max.y + min.y) / 2, 0)
+    # glRotatef(angle, 0, 0, 1)
+    # glTranslatef(-(max.x + min.x) / 2, -(max.y + min.y) / 2, 0)
     
     # DRAW POLYGONS
+    glBegin(GL_TRIANGLES)
     for type in location.polygons:
-        for polygon in location.polygons[type]:
-            glBegin(GL_TRIANGLES)
-            
+        for polygon in location.polygons[type]:        
             # MAIN
             glColor3f(*POLYGON_COLOR[type])
             for point in polygon.triangles[0]:
@@ -43,15 +46,7 @@ def paintGL():
                 for point in triangle:
                     glVertex2f(point.x, point.y)     
                 
-            glEnd()
-                
-            # BORDERS
-            glColor3f(*POLYGON_BORDER_COLOR[type])
-            for coord in polygon.coords:
-                glBegin(GL_LINE_STRIP)
-                for point in coord:
-                    glVertex2f(point.x, point.y)
-                glEnd()
+    glEnd()
                 
     glBegin(GL_TRIANGLES)
     
