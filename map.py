@@ -1,103 +1,150 @@
-import json
+from json import loads
+from typing import Callable
+from math import cos, sin, radians
 
-from settings import LINE_WIDTH
-
+from settings import *
 from vec import Vec2
 
+class Point:
+    def __init__(self, coord: Vec2):
+        self.coord = coord
+        
+        self.triangles = self.transform()
+        
+    def transform(self):
+        w = POINT_WIDTH / 2
+        step = 360 / POINT_SEGMENTS
+        
+        points: list[Vec2] = []
+        
+        for i in range(POINT_SEGMENTS):
+            angle = i * step
+            
+            x = self.coord.x + w * cos(radians(angle))
+            y = self.coord.y + w * sin(radians(angle))
+            
+            points.append(Vec2(x, y))
+        
+        triangles: list[Vec2] = []
+        
+        for curr, next in zip(points, points[1:] + [points[0]]):
+            triangles.append(self.coord)
+            triangles.extend([curr, next])
+        
+        return triangles
+    
+class LineString:
+    def __init__(self, coords: list[Vec2]):
+        self.coords = coords
+        
+        self.triangles = self.transform()
+    
+    def transform(self):
+        w = LINE_WIDTH / 2
+        
+        lines: list[list[Vec2]] = []
+
+        for prev, curr, next in zip([None] + self.coords[:-1], self.coords, self.coords[1:] + [None]):
+            t0 = Vec2(0, 0) if prev is None else (curr - prev).normalize()
+            t1 = Vec2(0, 0) if next is None else (next - curr).normalize()
+            
+            n0 = Vec2(-t0.y, t0.x)
+            n1 = Vec2(-t1.y, t1.x)
+            
+            if prev is None:
+                lines.append([
+                    curr + n1 * w,
+                    curr - n1 * w,
+                ])
+                 
+            elif next is None:
+                lines.append([
+                    curr + n0 * w,
+                    curr - n0 * w,
+                ])
+            else: 
+                m = (n0 + n1).normalize()
+                    
+                dy = w / Vec2.dot(m, n1)
+                
+                lines.append([
+                    curr + m * dy,
+                    curr - m * dy,
+                ])
+
+        triangles: list[Vec2] = []
+        
+        for curr, next in zip(lines[:-1], lines[1:]):
+            triangles.extend([curr[0], curr[1],  next[0]])
+            triangles.extend([next[0], next[1], curr[1]])
+
+        return triangles
+    
 class Polygon:
-    def __init__(
-        self,
-        name: str | None = None,
-        coords: list[list[Vec2]] | None = None,
-        type: str | None = None
-    ):
+    def __init__(self, name: str | None, coords: list[Vec2]):
         self.name = name
         self.coords = coords
-
-        self.triangles = [self.triangulate(coord) for coord in coords]
-
-        self.type = type
-
-        self.min = self.min()
-        self.max = self.max()
-        self.centroid = self.centroid()
-
-    def min(self):
-        x = min([point.x for coord in self.coords for point in coord])
-        y = min([point.y for coord in self.coords for point in coord])
-
-        return Vec2(x, y)
-
-    def max(self):
-        x = max([point.x for coord in self.coords for point in coord])
-        y = max([point.y for coord in self.coords for point in coord])
-
-        return Vec2(x, y)
-
-    def centroid(self):
-        size = sum([len(coord) for coord in self.coords])
-
-        x = sum([point.x for coord in self.coords for point in coord]) / size
-        y = sum([point.y for coord in self.coords for point in coord]) / size
-
-        return Vec2(x, y)
-
-    def triangulate(self, polygon: list[Vec2]):
+        
+        self.min = Vec2.min(*self.coords)
+        self.max = Vec2.max(*self.coords)
+        self.center = Vec2.center(*self.coords)
+        
+        self.triangles = self.transform()
+    
+    def transform(self):
         triangles: list[Vec2] = []
 
-        if self.isClockwise(polygon):
-            polygon = polygon[::-1]
+        if self.isClockwise(self.coords):
+            coords = self.coords[::-1]
         else:
-            polygon = polygon[:]
+            coords = self.coords[:]
 
-        while len(polygon) >= 3:
-            a = self.getEar(polygon)
+        while len(coords) >= 3:
+            a = self.getEar(coords)
             if a == []:
                 break
 
             triangles.extend(a)
         return triangles
 
-    def isClockwise(self, polygon: list[Vec2]):
-        # initialize sum with last element
-        sum = (polygon[0].x - polygon[len(polygon) - 1].x) * (polygon[0].y + polygon[len(polygon) - 1].y)
 
-        # iterate over all other elements (0 to n-1)
-        for i in range(len(polygon) - 1):
-            sum += (polygon[i + 1].x - polygon[i].x) * (polygon[i + 1].y + polygon[i].y)
+    def isClockwise(self, coord: list[Vec2]):
+        sum = (coord[0].x - coord[len(coord) - 1].x) * (coord[0].y + coord[len(coord) - 1].y)
+
+        for i in range(len(coord) - 1):
+            sum += (coord[i + 1].x - coord[i].x) * (coord[i + 1].y + coord[i].y)
 
         return sum > 0
 
-    def getEar(self, polygon: list[Vec2]):
-        size = len(polygon)
+    def getEar(self, coord: list[Vec2]):
+        size = len(coord)
 
         if size < 3:
             return []
 
         if size == 3:
-            tri = [polygon[0], polygon[1], polygon[2]]
-            del polygon[:]
-            return tri
+            triangle = [coord[0], coord[1], coord[2]]
+            del coord[:]
+            return triangle
 
         for i in range(size):
             tritest = False
 
-            p1 = polygon[(i - 1) % size]
-            p2 = polygon[i % size]
-            p3 = polygon[(i + 1) % size]
+            p1 = coord[(i - 1) % size]
+            p2 = coord[i % size]
+            p3 = coord[(i + 1) % size]
 
             if self.isConvex(p1, p2, p3):
-                for x in polygon:
+                for x in coord:
                     if not (x in (p1, p2, p3)) and self.isInTriangle(p1, p2, p3, x):
                         tritest = True
 
                 if tritest == False:
-                    del polygon[i % size]
+                    del coord[i % size]
                     return [p1, p2, p3]
         return []
 
     def isConvex(self, a: Vec2, b: Vec2, c: Vec2):
-        # only convex if traversing anti-clockwise!
         crossp = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)
 
         if crossp >= 0:
@@ -109,195 +156,167 @@ class Polygon:
         return (c.x - p.x) * (a.y - p.y) - (a.x - p.x) * (c.y - p.y) >= 0 and \
                 (a.x - p.x) * (b.y - p.y) - (b.x - p.x) * (a.y - p.y) >= 0 and \
                 (b.x - p.x) * (c.y - p.y) - (c.x - p.x) * (b.y - p.y) >= 0
-                
-class Line:
-    def __init__(self, name: str | None, coords: list[Vec2] | None = None):
-        self.name = name
-        self.coords = coords
-
-        self.quads = self.fourangulate()
-
-    def fourangulate(self):
-        quads: list[list[Vec2]] = []
-
-        for prev, curr in zip(self.coords[:-1], self.coords[1:]):
-            delta = (curr - prev).normalize()
-
-            normal = Vec2(-delta.y, delta.x)
-
-            q0 = prev + normal * (LINE_WIDTH / 2)
-            q1 = prev - normal * (LINE_WIDTH / 2)
-            q2 = curr - normal * (LINE_WIDTH / 2)
-            q3 = curr + normal * (LINE_WIDTH / 2)
-
-            quads.append([q0, q1, q2, q3])
-
-        return quads
 
 class Map:
-    def __init__(self, file: str):
-        self.file = file
-
-        self.polygons: list[Polygon] = []
-        self.lines: list[Line] = []
-
-        self.graph: dict[Vec2, list[Vec2]] = {}
-
+    def __init__(self, filepath: str):
+        self.filepath = filepath
+        
+        # BOX LIMITS
+        self.global_min = Vec2(float('inf'), float('inf'))
+        self.global_max = Vec2(float('-inf'), float('-inf'))
+        
+        # VISIBLE BOX
         self.min = Vec2(float('inf'), float('inf'))
         self.max = Vec2(float('-inf'), float('-inf'))
-
+        
+        # OBJECTS
+        self.line_strings: list[LineString] = []
+        self.polygons: dict[str, list[Polygon]] = { 
+            'other': [], 'building': [], 'water': [], 'grass': []
+        }
+        
+        # GRAPH
+        self.graph: dict[Vec2, list[Vec2]] = {}
+        
+        # PATH
+        self.start: Point | None = None
+        self.goal: Point | None = None
+        self.path: LineString | None = None
+        self.distance = 0.0
+        
         self.load()
-
-    def __repr__(self):
-        return f'Map({self.file})'
-
-    def updateBorder(self, coord: Vec2):
-        self.min.x = min(self.min.x, coord.x)
-        self.max.x = max(self.max.x, coord.x)
-        self.min.y = min(self.min.y, coord.y)
-        self.max.y = max(self.max.y, coord.y)
-
+        
     def load(self):
-        with open(self.file, 'r') as f:
-            data = json.loads(f.read())
-
+        with open(self.filepath, 'r') as f:
+            data = loads(f.read())
+            
         for feature in data['features']:
-            type = feature['geometry']['type']
-            coords: list[list[float]] = feature['geometry']['coordinates']
-
             properties = feature['properties']
-            name_ = properties.get('name')
-
-            if type == 'Polygon':
-                if properties.get('type') == 'boundary':
-                    continue
-
-                if properties.get('leisure') == 'park':
-                    continue
-
-                coords_ = []
-
-                for coord in coords:
-                    coord_ = []
-
-                    for x, y in coord:
-                        point = Vec2(x, y)
-
-                        coord_.append(point)
-                        self.updateBorder(point)
-
-                    coords_.append(coord_)
-
-                type_ = 'building'
-
-                if properties.get('landuse') in (
-                    'basin',
-                    'salt_pond',
-                ) or properties.get('leisure') in (
-                    'swimming_pool',
-                ) or properties.get('natural') in (
-                    'reef',
-                    'water',
-                ):
-                    type_ = 'water'
-
-                if properties.get('landuse') in (
-                    'allotments',
-                    'flowerbed',
-                    'forest',
-                    'meadow',
-                    'orchard',
-                    'plant_nursery',
-                    'vineyard',
-                    'cemetery',
-                    'grass',
-                    'recreation_ground',
-                    'village_green',
-                ) or properties.get('leisure') in (
-                    'garden',
-                    'pitch',
-                ) or properties.get('natural') in (
-                    'grassland',
-                    'heath',
-                    'scrub',
-                    'wood',
-                    'wetland',
-                ):
-                    type_ = 'grass'
-
-                if properties.get('natural') in (
-                    'beach',
-                    'sand'
-                ):
-                    type_ = 'sand'
-                
-                if properties.get('barrier') in (
-                    'city_wall',
-                    'ditch',
-                    'fence',
-                    'guard_rail',
-                    'handrail',
-                    'retaining_wall',
-                    'wall',
-                ):
-                    type_ = 'wall'
-
-                self.polygons.append(Polygon(name_, coords_, type_))
-
-            elif type == 'LineString':
+            coords = feature['geometry']['coordinates']
+            
+            type = feature['geometry']['type']
+            
+            if type == 'LineString':
                 if properties.get('highway') not in (
-                    'motorway',
-                    'trunk',
+                    'motorway', 
+                    'motorway_link', 
+                    'trunk', 
+                    'trunk_link',
                     'primary',
+                    'primary_link',
+                    
                     'secondary',
+                    'secondary_link',
                     'tertiary',
+                    'tertiary_link',
+                    'road',
+                    
+                    'living_street',
+                    'pedestrian',
                     'unclassified',
                     'residential',
-                    'motorway_link',
-                    'trunk_link',
-                    'primary_link',
-                    'secondary_link',
-                    'tertiary_link',
-                    'living_street',
-                    'service',
-                    'pedestrian',
-                    'raceway',
-                    'road',
                 ):
                     continue
+                    
+                coords_ = [Vec2(*coord) for coord in coords]
+                
+                for prev, curr, next in zip([None] + coords_[:-1], coords_, coords_[1:] + [None]):
+                    if curr not in self.graph:
+                        self.graph[curr] = []
+                        
+                    if prev and prev not in self.graph[curr]:
+                        self.graph[curr].append(prev)
+                
+                    if next and next not in self.graph[curr]:
+                        self.graph[curr].append(next)
+                        
+                self.line_strings.append(LineString(coords_))
+                
+                
+            elif type == 'Polygon':
+                if properties.get('type') == 'boundary':
+                    continue
+                
+                name_ = properties.get('name')
+                
+                if properties.get('landuse') in (
+                    'forest', 
+                    'allotments', 
+                    'meadow', 
+                    'cemetery', 
+                    'grass'
+                ) or properties.get('natural') in (
+                    'grassland', 
+                    'heath', 
+                    'scrub', 
+                    'wood',
+                    'wetland'
+                ) or properties.get('leisure') == 'park':
+                    type_ = 'grass'
+                
+                elif properties.get('leisure') == 'swimming_pool' or properties.get('natural') == 'water':
+                    type_ = 'water'
+            
+                elif properties.get('building') is not None:
+                    type_ = 'building'
+                
+                else:
+                    type_ = 'other'
+                
+                coords_ = [Vec2(*coord) for coord in coords[0]]
+                
+                self.polygons[type_].append(Polygon(name_, coords_))
+                
+            else:
+                continue
+                
+            self.global_min = Vec2.min(self.global_min, *coords_)
+            self.global_max = Vec2.max(self.global_max, *coords_)
 
-                coords_: list[Vec2] = []
+        self.min = self.global_min
+        self.max = self.global_max
 
-                for prev, curr, next in zip([None] + coords[:-1], coords, coords[1:] + [None]):
-                    point = Vec2(*curr)
+    def select(self, coord: Vec2):
+        coord = coord.nearest(self.graph.keys())
+        
+        self.path = None
+        self.distance = 0.0
+        
+        if self.start is None:
+            self.start = Point(coord)
+        elif self.start.coord == coord:
+            self.start = None
+        elif self.goal is None or self.goal.coord != coord:
+            self.goal = Point(coord)
+        elif self.goal.coord == coord:
+            self.goal = None
+            
+        if self.start is None and self.goal is not None:
+            self.start, self.goal = self.goal, self.start
+            
+        if self.start is not None and self.goal is not None:
+            path, distance = self.a_star(self.start.coord, self.goal.coord, Vec2.distance)
+            
+            self.path = LineString(path)
+            self.distance = distance
+        
+    def zoom(self, coord: Vec2, sign: float):
+        factor = sign * ZOOM_FACTOR
+        
+        self.min += (coord - self.min) * factor
+        self.max -= (self.max - coord) * factor
+        
+    def move(self, movement: Vec2):
+        self.min -= movement
+        self.max -= movement
 
-                    coords_.append(point)
-                    self.updateBorder(point)
-
-                    if point not in self.graph:
-                        self.graph[point] = []
-
-                    if prev is not None:
-                        prev_point = Vec2(*prev)
-
-                        if prev_point not in self.graph[point]:
-                            self.graph[point].append(prev_point)
-
-                    if next is not None:
-                        next_point = Vec2(*next)
-
-                        if next_point not in self.graph[point]:
-                            self.graph[point].append(next_point)
-
-                self.lines.append(Line(name_, coords_))
-
-    def aStar(self, start: Vec2, goal: Vec2):
-        openSet = {start}
+    def a_star(self, start: Vec2, goal: Vec2, h: Callable[[Vec2, Vec2], float]):
+        openSet = { start }
 
         cameFrom = {}
 
-        gScore: dict[Vec2, float] = {start: 0}
-        fScore = {start: Vec2.distance(start, goal)}
+        gScore: dict[Vec2, float] = { start: 0 }
+        fScore = { start: h(start, goal) }
 
         while len(openSet) > 0:
             current = min(openSet, key=lambda x: fScore[x])
@@ -308,9 +327,8 @@ class Map:
                 while current in cameFrom:
                     current = cameFrom[current]
                     total_path.append(current)
-
+                
                 return total_path, gScore[goal]
-
 
             openSet.remove(current)
 
@@ -320,13 +338,12 @@ class Map:
                 if neighbor not in gScore or tentative_gScore < gScore[neighbor]:
                     cameFrom[neighbor] = current
                     gScore[neighbor] = tentative_gScore
-                    fScore[neighbor] = tentative_gScore + Vec2.distance(neighbor, goal)
+                    fScore[neighbor] = tentative_gScore + h(neighbor, goal)
 
                     if neighbor not in openSet:
                         openSet.add(neighbor)
 
-        return None, 0.0
-
+        return [], 0.0
 
 if __name__ == '__main__':
-    location = Map('russas.geojson')
+    m = Map('russas.geojson')

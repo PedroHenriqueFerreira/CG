@@ -1,12 +1,10 @@
 from typing import Union
 from math import radians, sin, cos, asin, sqrt
 
-ScalarType = Union[int, float]
-OtherType = Union[ScalarType, 'Vec2']
-
+OtherType = Union[float, 'Vec2']
 
 class Vec2:
-    def __init__(self, x: ScalarType, y: ScalarType):
+    def __init__(self, x: float, y: float):
         self.x = x
         self.y = y
 
@@ -104,8 +102,15 @@ class Vec2:
         return min(vectors, key=lambda v: Vec2.distance(self, v))
 
     @staticmethod
-    def dot(a: 'Vec2', b: 'Vec2') -> ScalarType:
+    def dot(a: 'Vec2', b: 'Vec2') -> float:
         return a.x * b.x + a.y * b.y
+
+    @staticmethod
+    def center(*vectors: 'Vec2'):
+        x = sum(v.x for v in vectors) / len(vectors)
+        y = sum(v.y for v in vectors) / len(vectors)
+        
+        return Vec2(x, y)
 
     @staticmethod
     def min(*vectors: 'Vec2'):
@@ -116,7 +121,7 @@ class Vec2:
         return Vec2(max(v.x for v in vectors), max(v.y for v in vectors))
 
     @staticmethod
-    def distance(a: 'Vec2', b: 'Vec2') -> ScalarType:
+    def distance(a: 'Vec2', b: 'Vec2') -> float:
         return ((b.x - a.x) ** 2 + (b.y - a.y) ** 2) ** 0.5
 
     @staticmethod

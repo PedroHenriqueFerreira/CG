@@ -5,8 +5,5 @@ def hexToRGB(hex: str):
     
     return tuple(int(hex[i:i+2], 16) / 255 for i in (0, 2, 4))
 
-def hexToRGBA(hex: str, alpha: float):
-    return hexToRGB(hex) + (alpha,)
-
 def randomRGB():
     return hexToRGB(f'#{randint(0, 0xFFFFFF):06x}')
