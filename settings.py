@@ -1,5 +1,9 @@
 from rgb import hexToRGB
 
+FPS = 60
+SPEED = 0.00001
+ROTATE_SPEED = 0.05
+
 LINE_WIDTH = 0.00005
 
 POINT_WIDTH = 0.0001

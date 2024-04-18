@@ -1,7 +1,73 @@
 from typing import Union
 from math import radians, sin, cos, asin, sqrt
 
-OtherType = Union[float, 'Vec2']
+class Mat2:
+    def __init__(self, a: float, b: float, c: float, d: float):
+        self.data = [[a, b], [c, d]]
+
+    def __repr__(self):
+        return f'Mat2({self.data})'
+
+    def __add__(self, other: Union[float, 'Mat2']):
+        if isinstance(other, float | int):
+            other = Mat2(other, other, other, other)
+            
+        return Mat2(
+            self.data[0][0] + other.data[0][0], 
+            self.data[0][1] + other.data[0][1], 
+            self.data[1][0] + other.data[1][0], 
+            self.data[1][1] + other.data[1][1]
+        )
+    
+    def __radd__(self, other: Union[float, 'Mat2']):
+        if isinstance(other, float | int):
+            other = Mat2(other, other, other, other)
+            
+        return other + self
+    
+    def __sub__(self, other: Union[float, 'Mat2']):
+        if isinstance(other, float | int):
+            other = Mat2(other, other, other, other)
+            
+        return Mat2(
+            self.data[0][0] - other.data[0][0], 
+            self.data[0][1] - other.data[0][1], 
+            self.data[1][0] - other.data[1][0], 
+            self.data[1][1] - other.data[1][1]
+        )
+        
+    def __rsub__(self, other: Union[float, 'Mat2']):
+        if isinstance(other, float | int):
+            other = Mat2(other, other, other, other)
+            
+        return other - self
+    
+    def __mul__(self, other: Union[float, 'Vec2', 'Mat2']):
+        if isinstance(other, float | int):
+            other = Mat2(other, other, other, other)
+            
+        if isinstance(other, Vec2):
+            return Vec2(
+                self.data[0][0] * other.x + self.data[0][1] * other.y, 
+                self.data[1][0] * other.x + self.data[1][1] * other.y
+            )
+            
+        return Mat2(
+            self.data[0][0] * other.data[0][0] + self.data[0][1] * other.data[1][0], 
+            self.data[0][0] * other.data[0][1] + self.data[0][1] * other.data[1][1], 
+            self.data[1][0] * other.data[0][0] + self.data[1][1] * other.data[1][0], 
+            self.data[1][0] * other.data[0][1] + self.data[1][1] * other.data[1][1]
+        )
+        
+    def __rmul__(self, other: Union[float, 'Mat2']):
+        if isinstance(other, float | int):
+            other = Mat2(other, other, other, other)
+            
+        return other * self        
+
+    @staticmethod
+    def rotation_z(angle: float):
+        return Mat2(cos(angle), -sin(angle), sin(angle), cos(angle))
 
 class Vec2:
     def __init__(self, x: float, y: float):
@@ -11,73 +77,73 @@ class Vec2:
     def __repr__(self):
         return f'Vec2({self.x}, {self.y})'
 
-    def __add__(self, other: OtherType):
+    def __add__(self, other: Union[float, 'Vec2']):
         if isinstance(other, float | int):
             other = Vec2(other, other)
 
         return Vec2(self.x + other.x, self.y + other.y)
 
-    def __radd__(self, other: OtherType):
+    def __radd__(self, other: Union[float, 'Vec2']):
         if isinstance(other, float | int):
             other = Vec2(other, other)
 
         return other + self
 
-    def __sub__(self, other: OtherType):
+    def __sub__(self, other: Union[float, 'Vec2']):
         if isinstance(other, float | int):
             other = Vec2(other, other)
 
         return Vec2(self.x - other.x, self.y - other.y)
 
-    def __rsub__(self, other: OtherType):
+    def __rsub__(self, other: Union[float, 'Vec2']):
         if isinstance(other, float | int):
             other = Vec2(other, other)
 
         return other - self
 
-    def __mul__(self, other: OtherType):
+    def __mul__(self, other: Union[float, 'Vec2']):
         if isinstance(other, float | int):
             other = Vec2(other, other)
-
+            
         return Vec2(self.x * other.x, self.y * other.y)
 
-    def __rmul__(self, other: OtherType):
+    def __rmul__(self, other: Union[float, 'Vec2']):
         if isinstance(other, float | int):
             other = Vec2(other, other)
 
         return other * self
 
-    def __truediv__(self, other: OtherType):
+    def __truediv__(self, other: Union[float, 'Vec2']):
         if isinstance(other, float | int):
             other = Vec2(other, other)
 
         return Vec2(self.x / other.x, self.y / other.y)
 
-    def __rtruediv__(self, other: OtherType):
+    def __rtruediv__(self, other: Union[float, 'Vec2']):
         if isinstance(other, float | int):
             other = Vec2(other, other)
 
         return other / self
 
-    def __floordiv__(self, other: OtherType):
+    def __floordiv__(self, other: Union[float, 'Vec2']):
         if isinstance(other, float | int):
             other = Vec2(other, other)
 
         return Vec2(self.x // other.x, self.y // other.y)
 
-    def __rfloordiv__(self, other: OtherType):
+    def __rfloordiv__(self, other: Union[float, 'Vec2']):
         if isinstance(other, float | int):
             other = Vec2(other, other)
 
         return other // self
 
-    def __pow__(self, other: OtherType):
+    def __pow__(self, other: Union[float, 'Vec2']):
         if isinstance(other, float | int):
             other = Vec2(other, other)
 
         return Vec2(self.x ** other.x, self.y ** other.y)
 
-    def __rpow__(self, other: OtherType):
+    def __rpow__(self, other: Union[float, 'Vec2']):
         if isinstance(other, float | int):
             other = Vec2(other, other)
 
