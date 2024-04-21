@@ -68,28 +68,20 @@ car_width = 0.01
 i = Vec2(1, 0)
 j = Vec2(0, 1)
 
-
-counter = 0.01
 def paintGL():   
-    global counter
-    
     glClear(GL_COLOR_BUFFER_BIT)
 
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    # glOrtho(-1, 1, -1, 1, -1, 1)
-    gluPerspective(50, glutGet(GLUT_WINDOW_WIDTH) / glutGet(GLUT_WINDOW_HEIGHT), 0.01, 1000)
+    glOrtho(-1, 1, -1, 1, -1, 1)
+    # gluPerspective(55, glutGet(GLUT_WINDOW_WIDTH) / glutGet(GLUT_WINDOW_HEIGHT), 0.01, 1000)
 
-    glMatrixMode(GL_MODELVIEW)
-    glLoadIdentity()
+    # glMatrixMode(GL_MODELVIEW)
+    # glLoadIdentity()
     
-    aa = Mat2(i.x, j.x, i.y, j.y) * pos
+    # aa = Mat2(i.x, j.x, i.y, j.y) * Vec2(0, -0.1)
     
-    gluLookAt(aa.x, aa.y - 0.1, 0.05, pos.x, pos.y, 0, 0, 0, 1)
-
-    print(counter)
-
-    counter += 0.1
+    # gluLookAt(pos.x + aa.x, pos.y + aa.y, 0.05, pos.x, pos.y, 0, 0, 0, 1)
 
     glTranslatef(location.offset.x, location.offset.y, 0)
     glScalef(location.scale, location.scale, 1)
@@ -103,6 +95,7 @@ def paintGL():
         for polygon in location.polygons[type]:
             for point in polygon.triangles:
                 glVertex2f(point.x, point.y)
+                    
                 
     # DRAW LINE STRINGS
     glColor3f(*LINE_STRING_COLOR)
@@ -126,7 +119,7 @@ def paintGL():
     if location.goal is not None:
         for point in location.goal.triangles:
             glVertex2f(point.x, point.y)
-    
+
     glEnd()
     
     # DRAW TEXTS
@@ -222,12 +215,12 @@ def timerGL(value: int):
         pos -= j * SPEED
         
     if key_down.get(b'a'):
-        i = Mat2.rotation_z(ROTATE_SPEED) * i
-        j = Mat2.rotation_z(ROTATE_SPEED) * j
+        i = Mat2.rotation(ROTATE_SPEED) * i
+        j = Mat2.rotation(ROTATE_SPEED) * j
     
     if key_down.get(b'd'):
-        i = Mat2.rotation_z(-ROTATE_SPEED) * i
-        j = Mat2.rotation_z(-ROTATE_SPEED) * j    
+        i = Mat2.rotation(-ROTATE_SPEED) * i
+        j = Mat2.rotation(-ROTATE_SPEED) * j    
         
     glutPostRedisplay()
         

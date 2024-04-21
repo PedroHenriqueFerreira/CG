@@ -66,7 +66,7 @@ class Mat2:
         return other * self        
 
     @staticmethod
-    def rotation_z(angle: float):
+    def rotation(angle: float):
         return Mat2(cos(angle), -sin(angle), sin(angle), cos(angle))
 
 class Vec2:
