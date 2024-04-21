@@ -14,13 +14,12 @@ location = Map('russas.geojson')
 mouse_down = Vec2(0, 0)
 mouse_moving = False
 
-w_down = False
-a_down = False
-s_down = False
-d_down = False
+key_down: dict[str, bool] = {}
 
-def loadTexture(filename: str):
-    image = Image.open(filename)
+texture: dict[str, int] = {}
+
+def load_texture(filename: str):
+    image = Image.open(filename).transpose(Image.FLIP_TOP_BOTTOM)
     
     data = image.tobytes()
     
@@ -45,37 +44,55 @@ def loadTexture(filename: str):
 
 def normalize(x: int, y: int):
     window = Vec2(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT))
-    coord = Vec2(x, window.y - y)
-
-    return (coord / window) * (location.max - location.min) + location.min
+    coord = (Vec2(x, window.y - y) / window) * 2 - 1
+    
+    return (coord - location.offset) / location.scale
 
 def initGL():
     global texture_grass, texture_water
     
     glClearColor(*BG_COLOR, 1)
     
+    glEnable(GL_DEPTH_TEST)
     glEnable(GL_MULTISAMPLE)
     glEnable(GL_TEXTURE_2D)
     glEnable(GL_BLEND)
     
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     
-pos = (location.max + location.min) / 2
-car_width = 0.00005
-car_height = 0.0001
+    texture['car'] = load_texture('car.png')
+    
+pos = Vec2(0, 0)
+car_width = 0.01
 
 i = Vec2(1, 0)
 j = Vec2(0, 1)
 
+
+counter = 0.01
 def paintGL():   
+    global counter
+    
     glClear(GL_COLOR_BUFFER_BIT)
 
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    glOrtho(location.min.x, location.max.x, location.min.y, location.max.y, -1, 1)
+    # glOrtho(-1, 1, -1, 1, -1, 1)
+    gluPerspective(50, glutGet(GLUT_WINDOW_WIDTH) / glutGet(GLUT_WINDOW_HEIGHT), 0.01, 1000)
 
-    # glMatrixMode(GL_MODELVIEW)
-    # glLoadIdentity()
+    glMatrixMode(GL_MODELVIEW)
+    glLoadIdentity()
+    
+    aa = Mat2(i.x, j.x, i.y, j.y) * pos
+    
+    gluLookAt(aa.x, aa.y - 0.1, 0.05, pos.x, pos.y, 0, 0, 0, 1)
+
+    print(counter)
+
+    counter += 0.1
+
+    glTranslatef(location.offset.x, location.offset.y, 0)
+    glScalef(location.scale, location.scale, 1)
 
     glBegin(GL_TRIANGLES)
     
@@ -87,7 +104,6 @@ def paintGL():
             for point in polygon.triangles:
                 glVertex2f(point.x, point.y)
                 
-
     # DRAW LINE STRINGS
     glColor3f(*LINE_STRING_COLOR)
     for line_string in location.line_strings:
@@ -113,47 +129,47 @@ def paintGL():
     
     glEnd()
     
-    glPushMatrix()
-    
-    glMultMatrixf([
-        [i.x, i.y, 0, 0],
-        [j.x, j.y, 0, 0],
-        [0, 0, 1, 0],
-        [pos.x, pos.y, 0, 1],
-    ])
-    
-    glBegin(GL_TRIANGLES)
-    
-    glVertex2f(- car_width, - car_height)
-    glVertex2f(+ car_width, - car_height)
-    glVertex2f(+ car_width, + car_height)
+    # DRAW TEXTS
+    glColor3f(*TEXT_COLOR)
+    for text in location.texts:
+        w = sum(glutBitmapWidth(GLUT_BITMAP_9_BY_15, ord(char)) for char in text.value)
+        h = glutBitmapHeight(GLUT_BITMAP_9_BY_15)
+        
+        width = 2 * w / (glutGet(GLUT_WINDOW_WIDTH) * location.scale)
+        height = h / (glutGet(GLUT_WINDOW_HEIGHT) * location.scale)
+        
+        if text.max_width < width:
+            continue
+        
+        glRasterPos2f(text.coord.x - width / 2, text.coord.y - height / 2)
+        
+        for char in text.value:
+            glutBitmapCharacter(GLUT_BITMAP_9_BY_15, ord(char))
 
-    glVertex2f(- car_width, - car_height)
-    glVertex2f(- car_width, + car_height)
-    glVertex2f(+ car_width, + car_height)
+    # DRAW CAR
+    glBindTexture(GL_TEXTURE_2D, texture['car'])
+    
+    glPushMatrix()
+    glMultMatrixf([[i.x, i.y, 0, 0], [j.x, j.y, 0, 0], [0, 0, 1, 0], [pos.x, pos.y, 0, 1]])
+    
+    glBegin(GL_QUADS)
+    
+    glTexCoord2f(0,0)
+    glVertex2f(- car_width, - car_width)
+    glTexCoord2f(1,0)
+    glVertex2f(+ car_width, - car_width)
+    glTexCoord2f(1,1)
+    glVertex2f(+ car_width, + car_width)
+    glTexCoord2f(0,1)
+    glVertex2f(- car_width, + car_width)
     
     glEnd()
     
     glPopMatrix()
     
+    glBindTexture(GL_TEXTURE_2D, 0)
     
-    glColor3f(*TEXT_COLOR)
-    for type in location.polygons:
-        for polygon in location.polygons[type]:
-            if polygon.name is None:
-                continue
-            
-            w = sum(glutBitmapWidth(GLUT_BITMAP_9_BY_15, ord(char)) for char in polygon.name)
-            width = (w / glutGet(GLUT_WINDOW_WIDTH)) * (location.max.x - location.min.x)
-
-            if Vec2.distance(polygon.min, polygon.max) < width:
-                continue
-
-            glRasterPos2f(polygon.center.x - width / 2, polygon.center.y)
-
-            for char in polygon.name:
-                glutBitmapCharacter(GLUT_BITMAP_9_BY_15, ord(char))
-    
+        
     glutSwapBuffers()
 
 def mouseGL(button: int, state: int, x: int, y: int):
@@ -166,8 +182,6 @@ def mouseGL(button: int, state: int, x: int, y: int):
         sign = 1 if button == 3 else -1
         
         location.zoom(coord, sign)
-            
-        glutPostRedisplay()
 
     # CLICK EVENT
     elif button == GLUT_LEFT_BUTTON and state == GLUT_UP:
@@ -175,8 +189,6 @@ def mouseGL(button: int, state: int, x: int, y: int):
             return
         
         location.select(coord)
-
-        glutPostRedisplay()
         
     # DRAG EVENT
     elif button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
@@ -184,55 +196,36 @@ def mouseGL(button: int, state: int, x: int, y: int):
         mouse_moving = False
 
 def motionGL(x: int, y: int):
-    coord = normalize(x, y)
-    
     global mouse_moving
+    
     mouse_moving = True
     
-    location.move(coord - mouse_down)
-
-    glutPostRedisplay()
+    coord = normalize(x, y)
+    
+    location.move(mouse_down - coord)
 
 def keyboardGL(key: str, x: int, y: int):
-    global w_down, a_down, s_down, d_down
-    
-    if key == b'w':
-        w_down = True
-    elif key == b'a':
-        a_down = True
-    elif key == b's':
-        s_down = True
-    elif key == b'd':
-        d_down = True
+    key_down[key] = True
 
 def keyboardUpGL(key: str, x: int, y: int):
-    global w_down, a_down, s_down, d_down
-    
-    if key == b'w':
-        w_down = False
-    elif key == b'a':
-        a_down = False
-    elif key == b's':
-        s_down = False
-    elif key == b'd':
-        d_down = False
+    key_down[key] = False
 
 def timerGL(value: int):
     global pos, i, j
     
     glutTimerFunc(1000 // FPS, timerGL, 0)
     
-    if w_down:
+    if key_down.get(b'w'):
         pos += j * SPEED
     
-    if s_down:
+    if key_down.get(b's'):
         pos -= j * SPEED
         
-    if a_down:
+    if key_down.get(b'a'):
         i = Mat2.rotation_z(ROTATE_SPEED) * i
         j = Mat2.rotation_z(ROTATE_SPEED) * j
     
-    if d_down:
+    if key_down.get(b'd'):
         i = Mat2.rotation_z(-ROTATE_SPEED) * i
         j = Mat2.rotation_z(-ROTATE_SPEED) * j    
         
@@ -249,7 +242,6 @@ initGL()
 glutDisplayFunc(paintGL)
 glutMouseFunc(mouseGL)
 glutMotionFunc(motionGL)
-
 glutKeyboardFunc(keyboardGL)
 glutKeyboardUpFunc(keyboardUpGL)
 

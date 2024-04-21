@@ -6,13 +6,15 @@ from settings import *
 from vec import Vec2
 
 class Point:
-    def __init__(self, coord: Vec2):
+    def __init__(self, map: 'Map', coord: Vec2):
+        self.map = map
         self.coord = coord
         
         self.triangles = self.transform()
         
     def transform(self):
-        w = POINT_WIDTH / 2
+        w = POINT_WIDTH / (2 * (self.map.max.x - self.map.min.x))
+        
         step = 360 / POINT_SEGMENTS
         
         points: list[Vec2] = []
@@ -34,13 +36,14 @@ class Point:
         return triangles
     
 class LineString:
-    def __init__(self, coords: list[Vec2]):
+    def __init__(self, map: 'Map', coords: list[Vec2]):
+        self.map = map
         self.coords = coords
         
         self.triangles = self.transform()
     
     def transform(self):
-        w = LINE_WIDTH / 2
+        w = LINE_STRING_WIDTH / (2 * (self.map.max.x - self.map.min.x))
         
         lines: list[list[Vec2]] = []
 
@@ -79,15 +82,16 @@ class LineString:
             triangles.extend([next[0], next[1], curr[1]])
 
         return triangles
+
+class Text:
+    def __init__(self, value: str, coord: Vec2, max_width: float):
+        self.value = value
+        self.coord = coord
+        self.max_width = max_width
     
 class Polygon:
-    def __init__(self, name: str | None, coords: list[Vec2]):
-        self.name = name
+    def __init__(self, coords: list[Vec2]):
         self.coords = coords
-        
-        self.min = Vec2.min(*self.coords)
-        self.max = Vec2.max(*self.coords)
-        self.center = Vec2.center(*self.coords)
         
         self.triangles = self.transform()
     
@@ -162,15 +166,16 @@ class Map:
         self.filepath = filepath
         
         # BOX LIMITS
-        self.global_min = Vec2(float('inf'), float('inf'))
-        self.global_max = Vec2(float('-inf'), float('-inf'))
-        
-        # VISIBLE BOX
         self.min = Vec2(float('inf'), float('inf'))
         self.max = Vec2(float('-inf'), float('-inf'))
         
-        # OBJECTS
+        # VIEW
+        self.scale = 1.0
+        self.offset = Vec2(0, 0)
+        
+        # FIXED ELEMENTS
         self.line_strings: list[LineString] = []
+        self.texts: list[Text] = []
         self.polygons: dict[str, list[Polygon]] = { 
             'other': [], 'building': [], 'water': [], 'grass': []
         }
@@ -178,10 +183,12 @@ class Map:
         # GRAPH
         self.graph: dict[Vec2, list[Vec2]] = {}
         
-        # PATH
+        # DINAMIC ELEMENTS
         self.start: Point | None = None
         self.goal: Point | None = None
         self.path: LineString | None = None
+        
+        # DISTANCE
         self.distance = 0.0
         
         self.load()
@@ -189,14 +196,28 @@ class Map:
     def load(self):
         with open(self.filepath, 'r') as f:
             data = loads(f.read())
+        
+        for feature in data['features']:
+            geometry_type = feature['geometry']['type']
+            geometry_coords = feature['geometry']['coordinates']
             
+            if geometry_type == 'LineString':
+                coords = [Vec2(*coord) for coord in geometry_coords]
+            elif geometry_type == 'Polygon':
+                coords = [Vec2(*coord) for coord in geometry_coords[0]]
+            else:
+                continue
+            
+            self.min = Vec2.min(self.min, *coords)
+            self.max = Vec2.max(self.max, *coords)
+        
         for feature in data['features']:
             properties = feature['properties']
-            coords = feature['geometry']['coordinates']
             
-            type = feature['geometry']['type']
+            geometry_coords = feature['geometry']['coordinates']
+            geometry_type = feature['geometry']['type']
             
-            if type == 'LineString':
+            if geometry_type == 'LineString':
                 if properties.get('highway') not in (
                     'motorway', 
                     'motorway_link', 
@@ -217,10 +238,12 @@ class Map:
                     'residential',
                 ):
                     continue
-                    
-                coords_ = [Vec2(*coord) for coord in coords]
                 
-                for prev, curr, next in zip([None] + coords_[:-1], coords_, coords_[1:] + [None]):
+                coords = [self.normalize(Vec2(*coord)) for coord in geometry_coords]                        
+                
+                self.line_strings.append(LineString(self, coords))
+                
+                for prev, curr, next in zip([None] + coords[:-1], coords, coords[1:] + [None]):
                     if curr not in self.graph:
                         self.graph[curr] = []
                         
@@ -229,15 +252,10 @@ class Map:
                 
                     if next and next not in self.graph[curr]:
                         self.graph[curr].append(next)
-                        
-                self.line_strings.append(LineString(coords_))
                 
-                
-            elif type == 'Polygon':
+            elif geometry_type == 'Polygon':
                 if properties.get('type') == 'boundary':
                     continue
-                
-                name_ = properties.get('name')
                 
                 if properties.get('landuse') in (
                     'forest', 
@@ -252,30 +270,53 @@ class Map:
                     'wood',
                     'wetland'
                 ) or properties.get('leisure') == 'park':
-                    type_ = 'grass'
+                    type = 'grass'
                 
-                elif properties.get('leisure') == 'swimming_pool' or properties.get('natural') == 'water':
-                    type_ = 'water'
+                elif properties.get('leisure') == 'swimming_pool' or \
+                    properties.get('natural') == 'water':
+                    type = 'water'
             
                 elif properties.get('building') is not None:
-                    type_ = 'building'
+                    type = 'building'
                 
                 else:
-                    type_ = 'other'
+                    type = 'other'
                 
-                coords_ = [Vec2(*coord) for coord in coords[0]]
+                coords = [self.normalize(Vec2(*coord)) for coord in geometry_coords[0]]
                 
-                self.polygons[type_].append(Polygon(name_, coords_))
+                self.polygons[type].append(Polygon(coords))
+                
+                name = properties.get('name')
+                
+                if name is None:
+                    continue
+                
+                min = Vec2.min(*coords)
+                max = Vec2.max(*coords)
+                
+                width = max.x - min.x
+                center = (min + max) / 2
+                
+                self.texts.append(Text(name, center, width))
                 
             else:
                 continue
-                
-            self.global_min = Vec2.min(self.global_min, *coords_)
-            self.global_max = Vec2.max(self.global_max, *coords_)
 
-        self.min = self.global_min
-        self.max = self.global_max
+    def normalize(self, coord: Vec2):
+        return ((coord - self.min) / (self.max - self.min)) * 2 - 1
 
+    def original(self, coord: Vec2):
+        return ((coord + 1) / 2) * (self.max - self.min) + self.min
+      
+    def zoom(self, coord: Vec2, sign: float):
+        scale = self.scale * (1 + ZOOM_FACTOR) ** sign
+        
+        self.offset -= (scale - self.scale) * coord
+        self.scale = scale
+        
+    def move(self, movement: Vec2):
+        self.offset -= movement * self.scale
+ 
     def select(self, coord: Vec2):
         coord = coord.nearest(self.graph.keys())
         
@@ -283,62 +324,64 @@ class Map:
         self.distance = 0.0
         
         if self.start is None:
-            self.start = Point(coord)
+            self.start = Point(self, coord)
+            
         elif self.start.coord == coord:
             self.start = None
+            
+            if self.goal is not None:
+                self.start, self.goal = self.goal, self.start
+                
         elif self.goal is None or self.goal.coord != coord:
-            self.goal = Point(coord)
+            self.goal = Point(self, coord)
+            
         elif self.goal.coord == coord:
             self.goal = None
             
-        if self.start is None and self.goal is not None:
-            self.start, self.goal = self.goal, self.start
-            
         if self.start is not None and self.goal is not None:
-            path, distance = self.a_star(self.start.coord, self.goal.coord, Vec2.distance)
+            path, distance = self.construct_path()
             
-            self.path = LineString(path)
+            coords = [self.normalize(item) for item in path]
+            
+            self.path = LineString(self, coords)
             self.distance = distance
+            
+            print(distance)
+ 
+    def construct_path(self):
+        start = self.original(self.start.coord)
+        goal = self.original(self.goal.coord)
         
-    def zoom(self, coord: Vec2, sign: float):
-        factor = sign * ZOOM_FACTOR
-        
-        self.min += (coord - self.min) * factor
-        self.max -= (self.max - coord) * factor
-        
-    def move(self, movement: Vec2):
-        self.min -= movement
-        self.max -= movement
-
-    def a_star(self, start: Vec2, goal: Vec2, h: Callable[[Vec2, Vec2], float]):
         openSet = { start }
 
         cameFrom = {}
 
         gScore: dict[Vec2, float] = { start: 0 }
-        fScore = { start: h(start, goal) }
+        fScore = { start: Vec2.distance(start, goal) }
 
         while len(openSet) > 0:
             current = min(openSet, key=lambda x: fScore[x])
 
             if current == goal:
-                total_path = [current]
+                path = [current]
 
                 while current in cameFrom:
                     current = cameFrom[current]
-                    total_path.append(current)
+                    path.append(current)
                 
-                return total_path, gScore[goal]
+                return path, gScore[goal]
 
             openSet.remove(current)
 
-            for neighbor in self.graph[current]:
+            for neighbor in self.graph[self.normalize(current)]:
+                neighbor = self.original(neighbor)
+                
                 tentative_gScore = gScore[current] + Vec2.haversine(current, neighbor)
 
                 if neighbor not in gScore or tentative_gScore < gScore[neighbor]:
                     cameFrom[neighbor] = current
                     gScore[neighbor] = tentative_gScore
-                    fScore[neighbor] = tentative_gScore + h(neighbor, goal)
+                    fScore[neighbor] = tentative_gScore + Vec2.distance(neighbor, goal)
 
                     if neighbor not in openSet:
                         openSet.add(neighbor)
