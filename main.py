@@ -46,12 +46,12 @@ def paintGL():
     glOrtho(-1, 1, -1, 1, -1, 1)
     
     if len(map.line_strings.get('path', [])) > 0:
-        gluPerspective(60, window.x / window.y, 0.02, 1000)
+        gluPerspective(45, window.x / window.y, 0.02, 1000)
 
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
         camera = Mat2(map.car.i.x, map.car.j.x, map.car.i.y, map.car.j.y) * Vec2(0, -0.1)
-        gluLookAt(map.car.pos.x, map.car.pos.y, 0.05, map.car.pos.x, map.car.pos.y, 0, map.car.j.x, map.car.j.y, 0)
+        gluLookAt(map.car.pos.x + camera.x, map.car.pos.y + camera.y, 0.05, map.car.pos.x, map.car.pos.y, 0, 0, 0, 1)
 
     glTranslatef(map.offset.x, map.offset.y, 0)
     glScalef(map.scale, map.scale, 1)
