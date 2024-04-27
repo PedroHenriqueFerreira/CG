@@ -132,6 +132,9 @@ class Map:
                 
             else:
                 continue
+            
+        self.car.pos = list(self.graph.keys())[0]
+
 
     def normalize(self, coord: Vec2):
         return ((coord - self.min) / (self.max - self.min)) * 2 - 1
@@ -183,10 +186,7 @@ class Map:
 
             # CHANGE
             self.car.pos = start[0].coord
-            self.offset = Vec2(0, 0)
-            self.scale = 1.0
 
-            print(distance)
  
     def construct_path(self):
         start = self.original(self.points['start'][0].coord)

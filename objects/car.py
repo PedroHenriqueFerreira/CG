@@ -11,16 +11,19 @@ class Car:
     def __init__(self):
         self.texture = Texture(CAR_TEXTURE)
         
-        self.pos = Vec2(0, 0)        
+        self.pos = Vec2(0, 0)      
         
         self.i = Vec2(1, 0)
         self.j = Vec2(0, 1)
 
-    def forward(self):
-        self.pos += self.j * CAR_FORWARD_SPEED
+    def move(self, distance: float):
+        self.pos += self.j * distance
+
+    def move_forward(self):
+        self.move(CAR_FORWARD_SPEED)
         
-    def backward(self):
-        self.pos -= self.j * CAR_BACKWARD_SPEED
+    def move_backward(self):
+        self.move(-CAR_BACKWARD_SPEED)
         
     def rotate(self, angle: float):
         self.i = Mat2.rotation(angle) * self.i
@@ -40,15 +43,12 @@ class Car:
             [self.pos.x, self.pos.y, 0, 1]
         ]
         
-    def draw(self):
+    def draw(self):    
         w = CAR_WIDTH / 2
         
         glBindTexture(GL_TEXTURE_2D, self.texture.id)
-        
         glPushMatrix()
-        
         glMultMatrixf(self.matrix())
-        
         glBegin(GL_QUADS)
         
         glTexCoord2f(0, 0)
@@ -61,8 +61,8 @@ class Car:
         glVertex2f(-w, +w)
         
         glEnd()
-        
         glPopMatrix()
-        
         glBindTexture(GL_TEXTURE_2D, 0)
+        
+        
         

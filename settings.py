@@ -11,9 +11,9 @@ FPS = 60
 
 CAR_TEXTURE = 'assets/car.png'
 CAR_FORWARD_SPEED = 0.0025
-CAR_BACKWARD_SPEED = 0.001
+CAR_BACKWARD_SPEED = 0.00125
 CAR_ROTATION_SPEED = 0.01
-CAR_WIDTH = 0.005
+CAR_WIDTH = 0.01
 
 BG_COLOR = hex_to_RGB('#555A60')
 
@@ -24,7 +24,7 @@ POLYGON_COLOR = {
     'other': hex_to_RGB('#51565C'),
 }
 
-LINE_STRING_WIDTH = 0.005
+LINE_STRING_WIDTH = 0.01
 LINE_STRING_COLOR = {
     'path': hex_to_RGB('#04E5FE'),
     'primary': hex_to_RGB('#2B2F34'),
@@ -32,8 +32,8 @@ LINE_STRING_COLOR = {
     'tertiary': hex_to_RGB('#363D44'),
 }
 
-POINT_WIDTH = 0.005
-POINT_SEGMENTS = 24
+POINT_WIDTH = 0.01
+POINT_SEGMENTS = 40
 POINT_COLOR = {
     'start': hex_to_RGB('#85F2FF'),
     'goal': hex_to_RGB('#85F2FF'),

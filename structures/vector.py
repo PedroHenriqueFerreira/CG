@@ -1,5 +1,5 @@
 from typing import Union
-from math import radians, sin, cos, asin, sqrt
+from math import radians, sin, cos, asin, sqrt, acos, degrees
 
 class Vec2:
     def __init__(self, x: float, y: float):
@@ -44,7 +44,7 @@ class Vec2:
             other = Vec2(other, other)
 
         return other * self
-
+        
     def __truediv__(self, other: Union[float, 'Vec2']):
         if isinstance(other, float | int):
             other = Vec2(other, other)
@@ -100,8 +100,22 @@ class Vec2:
         return min(vectors, key=lambda v: Vec2.distance(self, v))
 
     @staticmethod
+    def degrees(a: 'Vec2', b: 'Vec2') -> float:
+        a_norm = a.normalize()
+        b_norm = b.normalize()
+        
+        angle = min(1, max(-1, Vec2.dot(a_norm, b_norm)))
+        sign = 1 if Vec2.cross(a_norm, b_norm) > 0 else -1
+        
+        return sign * degrees(acos(angle))
+
+    @staticmethod
     def dot(a: 'Vec2', b: 'Vec2') -> float:
         return a.x * b.x + a.y * b.y
+
+    @staticmethod
+    def cross(a: 'Vec2', b: 'Vec2') -> float:
+        return a.x * b.y - a.y * b.x
 
     @staticmethod
     def center(*vectors: 'Vec2'):
