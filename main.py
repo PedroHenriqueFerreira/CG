@@ -17,12 +17,11 @@ mouse_moving = False
 
 key_down: dict[str, bool] = {}
 
-
 def normalize(x: int, y: int):
     coord = (Vec2(x, window.y - y) / window) * 2 - 1
+    aspect_ratio = Vec2(window.x / window.y, 1)
 
-    return (coord - map.offset) / map.scale
-
+    return (coord * aspect_ratio / map.scale) + map.offset
 
 def initializeGL():
     global map
@@ -46,25 +45,28 @@ def paintGL():
 
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    gluPerspective(90, window.x / window.y, 0.01, 1000)
+    gluPerspective(90, window.x / window.y, 0.001, 1000)
 
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
 
-    camera = Mat2(map.car.i.x, map.car.j.x, map.car.i.y, map.car.j.y) * Vec2(0, -0.05)
-    gluLookAt(map.car.pos.x + camera.x, map.car.pos.y + camera.y, 0.05, map.car.pos.x, map.car.pos.y, 0, 0, 0, 1)
+    # camera = Mat2(map.car.i.x, map.car.j.x, map.car.i.y, map.car.j.y) * Vec2(0, -0.05)
+    # gluLookAt(map.car.pos.x + camera.x, map.car.pos.y + camera.y, 0.05, map.car.pos.x, map.car.pos.y, 0, 0, 0, 1)
 
-    # if len(map.line_strings.get('path', [])) > 0:
-    #     gluLookAt(0, 0, 1, 0, 0, 0, map.car.j.x, map.car.j.y, 0)
-
-    #     glScalef(map.scale, map.scale, 1)
-    #     glTranslatef(-map.car.pos.x, -map.car.pos.y, 0)
-    # else:
-    #     # gluLookAt(-map.offset.x, -map.offset.y, 1 / map.scale, -map.offset.x, -map.offset.y, 0, 0, 1, 0)
-    #     gluLookAt(0, 0, 1, 0, 0, 0, 0, 1, 0)
-
-    #     glTranslatef(map.offset.x, map.offset.y, 0)
-    #     glScalef(map.scale, map.scale, 1)
+    if len(map.line_strings.get('path', [])) > 0:
+        cam = Mat2(map.car.i.x, map.car.j.x, map.car.i.y, map.car.j.y) * Vec2(0, -0.05)
+        
+        gluLookAt(
+            map.car.pos.x + cam.x, map.car.pos.y + cam.y, 1 / map.scale, 
+            map.car.pos.x, map.car.pos.y, 0, 
+            map.car.j.x, map.car.j.y, 0
+        )
+    else:
+        gluLookAt(
+            map.offset.x, map.offset.y, 1 / map.scale, 
+            map.offset.x, map.offset.y, 0, 
+            0, 1, 0
+        )
 
     # DRAW POLYGONS
     for type in reversed(POLYGON_COLOR):
@@ -114,32 +116,45 @@ def paintGL():
     # DRAW CAR
     map.car.draw()
 
-    glutSwapBuffers()
+    # glBegin(GL_LINES)
+    
+    # for i in range(-2, 2 + 1):
+    #     glVertex2f(i / 2, -1)
+    #     glVertex2f(i / 2, 1)
+        
+    #     glVertex2f(-1, i / 2)
+    #     glVertex2f(1, i / 2)
+    
+    # glEnd()
 
+    glutSwapBuffers()
 
 def mouseGL(button: int, state: int, x: int, y: int):
     global mouse_down, mouse_moving
-
+    
+    if button != GLUT_LEFT_BUTTON:
+        return
+    
     coord = normalize(x, y)
 
-    # ZOOM EVENT
-    if button in (3, 4) and state == GLUT_DOWN:
-        sign = 1 if button == 3 else -1
-
-        map.zoom(coord, sign)
-
     # DRAG EVENT
-    elif button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
+    if state == GLUT_DOWN:
         mouse_down = coord
         mouse_moving = False
 
     # CLICK EVENT
-    elif button == GLUT_LEFT_BUTTON and state == GLUT_UP:
+    else:
         if mouse_moving:
             return
+        
+        print('C', coord)
 
         map.select(coord)
 
+def mouseWheelGL(button: int, direction: int, x: int, y: int):
+    coord = normalize(x, y)
+    
+    map.zoom(coord, direction)
 
 def motionGL(x: int, y: int):
     global mouse_moving
@@ -223,6 +238,7 @@ initializeGL()
 
 glutDisplayFunc(paintGL)
 glutMouseFunc(mouseGL)
+glutMouseWheelFunc(mouseWheelGL)
 glutMotionFunc(motionGL)
 glutKeyboardFunc(keyboardGL)
 glutKeyboardUpFunc(keyboardUpGL)

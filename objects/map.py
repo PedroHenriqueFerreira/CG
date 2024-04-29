@@ -142,14 +142,15 @@ class Map:
     def original(self, coord: Vec2):
         return ((coord + 1) / 2) * (self.max - self.min) + self.min
       
-    def zoom(self, coord: Vec2, sign: float):
-        scale = self.scale * (1 + ZOOM_FACTOR) ** sign
+    def zoom(self, coord: Vec2, direction: float):
+        scale = self.scale * (1 + ZOOM_FACTOR) ** direction
         
-        self.offset -= (scale - self.scale) * coord
+        self.offset += (coord - self.offset) * (1 - (self.scale / scale))    
+        
         self.scale = scale
         
     def move(self, movement: Vec2):
-        self.offset -= movement * self.scale
+        self.offset += movement
  
     def select(self, coord: Vec2):
         coord = coord.nearest(self.graph.keys())
