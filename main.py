@@ -7,6 +7,7 @@ from settings import *
 from structures.vector import Vec2
 from objects.map import Map
 from objects.texture import Texture
+from objects.camera import Camera
 
 map = None
 
@@ -48,24 +49,15 @@ def initializeGL():
 sign = -1
 pulse = 1
 
-counter = -1
-
-last = None
+cam = Camera()
 
 def paintGL():
-    global pulse, sign, last, counter
+    global pulse, sign
     
     if pulse >= 1.25 or pulse <= 1:
         sign *= -1
     
     pulse += sign * 0.02
-    
-    if counter >= 1:
-        counter = -1
-    elif counter >= 0:
-        counter += 0.005
-    
-    print(counter)
     
     glClear(GL_COLOR_BUFFER_BIT)
 
@@ -78,48 +70,23 @@ def paintGL():
 
     if len(map.line_strings.get('path', [])) > 0:
         camera = map.car.pos - map.car.j * 0.025
-        
-        if last is None:
-            last = [
-                camera.x, camera.y, 1 / map.scale, 
-                map.car.pos.x, map.car.pos.y, 0, 
-                map.car.j.x, map.car.j.y, 0
-            ]
-            
-            gluLookAt(*last)
-        else:            
-            current = [
-                camera.x, camera.y, 1 / map.scale, 
-                map.car.pos.x, map.car.pos.y, 0, 
-                map.car.j.x, map.car.j.y, 0
-            ]
-            
-            if any(a != b for a, b in zip(last, current)):
-                if counter == -1:
-                    counter = 0
-                
-                last = [
-                    a * (1 - counter) + (b) * counter for a, b in zip(last, current)
-                ]
-                
-                gluLookAt(*last)
-            else:
-                counter = -1
-                
-                gluLookAt(*current)
-        
-        # gluLookAt(
-        #     camera.x, camera.y, 1 / map.scale, 
-        #     map.car.pos.x, map.car.pos.y, 0, 
-        #     map.car.j.x, map.car.j.y, 0
-        # )
+
+        cam.update([
+            camera.x, camera.y, 1 / map.scale, 
+            map.car.pos.x, map.car.pos.y, 0, 
+            map.car.j.x, map.car.j.y, 0
+        ])
+
+        gluLookAt(*cam.values)
         
     else:
-        gluLookAt(
+        cam.update([
             map.offset.x, map.offset.y, 1 / map.scale, 
             map.offset.x, map.offset.y, 0, 
             0, 1, 0
-        )
+        ])
+        
+        gluLookAt(*cam.values)
 
     # DRAW POLYGONS
     for type in reversed(POLYGON_COLOR):
@@ -147,7 +114,7 @@ def paintGL():
             continue
 
         for point in map.points[type]:
-            point.draw(map.car.rotation, pulse, texture[type].id)
+            point.draw(map.car.rotation, 1, texture[type].id)
 
     # DRAW POLYGON NAMES
     glColor3f(*TEXT_COLOR)
