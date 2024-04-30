@@ -4,9 +4,9 @@ from OpenGL.GLUT import *
 
 from settings import *
 
-from structures.matrix import Mat2
 from structures.vector import Vec2
 from objects.map import Map
+from objects.texture import Texture
 
 map = None
 
@@ -16,6 +16,8 @@ mouse_down = Vec2(0, 0)
 mouse_moving = False
 
 key_down: dict[str, bool] = {}
+
+texture: dict[str, Texture] = {}
 
 def normalize(x: int, y: int):
     coord = (Vec2(x, window.y - y) / window) * 2 - 1
@@ -39,8 +41,32 @@ def initializeGL():
     glLineWidth(2)
 
     map = Map(MAP_PATH)
+    
+    for type in POINT_TEXTURE:
+        texture[type] = Texture(POINT_TEXTURE[type])
+
+sign = -1
+pulse = 1
+
+counter = -1
+
+last = None
 
 def paintGL():
+    global pulse, sign, last, counter
+    
+    if pulse >= 1.25 or pulse <= 1:
+        sign *= -1
+    
+    pulse += sign * 0.02
+    
+    if counter >= 1:
+        counter = -1
+    elif counter >= 0:
+        counter += 0.005
+    
+    print(counter)
+    
     glClear(GL_COLOR_BUFFER_BIT)
 
     glMatrixMode(GL_PROJECTION)
@@ -50,17 +76,44 @@ def paintGL():
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
 
-    # camera = Mat2(map.car.i.x, map.car.j.x, map.car.i.y, map.car.j.y) * Vec2(0, -0.05)
-    # gluLookAt(map.car.pos.x + camera.x, map.car.pos.y + camera.y, 0.05, map.car.pos.x, map.car.pos.y, 0, 0, 0, 1)
-
     if len(map.line_strings.get('path', [])) > 0:
-        cam = Mat2(map.car.i.x, map.car.j.x, map.car.i.y, map.car.j.y) * Vec2(0, -0.05)
+        camera = map.car.pos - map.car.j * 0.025
         
-        gluLookAt(
-            map.car.pos.x + cam.x, map.car.pos.y + cam.y, 1 / map.scale, 
-            map.car.pos.x, map.car.pos.y, 0, 
-            map.car.j.x, map.car.j.y, 0
-        )
+        if last is None:
+            last = [
+                camera.x, camera.y, 1 / map.scale, 
+                map.car.pos.x, map.car.pos.y, 0, 
+                map.car.j.x, map.car.j.y, 0
+            ]
+            
+            gluLookAt(*last)
+        else:            
+            current = [
+                camera.x, camera.y, 1 / map.scale, 
+                map.car.pos.x, map.car.pos.y, 0, 
+                map.car.j.x, map.car.j.y, 0
+            ]
+            
+            if any(a != b for a, b in zip(last, current)):
+                if counter == -1:
+                    counter = 0
+                
+                last = [
+                    a * (1 - counter) + (b) * counter for a, b in zip(last, current)
+                ]
+                
+                gluLookAt(*last)
+            else:
+                counter = -1
+                
+                gluLookAt(*current)
+        
+        # gluLookAt(
+        #     camera.x, camera.y, 1 / map.scale, 
+        #     map.car.pos.x, map.car.pos.y, 0, 
+        #     map.car.j.x, map.car.j.y, 0
+        # )
+        
     else:
         gluLookAt(
             map.offset.x, map.offset.y, 1 / map.scale, 
@@ -87,16 +140,14 @@ def paintGL():
 
         for line_string in map.line_strings[type]:
             line_string.draw()
-
+    
     # DRAW POINTS
-    for type in reversed(POINT_COLOR):
+    for type in reversed(POINT_TEXTURE):
         if type not in map.points:
             continue
 
-        glColor3f(*POINT_COLOR[type])
-
         for point in map.points[type]:
-            point.draw()
+            point.draw(map.car.rotation, pulse, texture[type].id)
 
     # DRAW POLYGON NAMES
     glColor3f(*TEXT_COLOR)
@@ -115,17 +166,6 @@ def paintGL():
 
     # DRAW CAR
     map.car.draw()
-
-    # glBegin(GL_LINES)
-    
-    # for i in range(-2, 2 + 1):
-    #     glVertex2f(i / 2, -1)
-    #     glVertex2f(i / 2, 1)
-        
-    #     glVertex2f(-1, i / 2)
-    #     glVertex2f(1, i / 2)
-    
-    # glEnd()
 
     glutSwapBuffers()
 
@@ -146,8 +186,6 @@ def mouseGL(button: int, state: int, x: int, y: int):
     else:
         if mouse_moving:
             return
-        
-        print('C', coord)
 
         map.select(coord)
 
@@ -181,52 +219,54 @@ def timerGL(value: int):
 
     glutTimerFunc(1000 // FPS, timerGL, 0)
 
-    near = map.car.pos.nearest(map.graph.keys())
-    
-    distance = Vec2.distance(map.car.pos, near)
+    nearest = map.car.pos.nearest(map.graph.keys())
+    distance = Vec2.distance(map.car.pos, nearest)
     
     if key_down.get(b'w'):
-        if distance != 0 and distance < CAR_FORWARD_SPEED:
-            map.car.pos = near
-        
-        elif map.car.pos in map.graph:
-            degrees = []
+        if distance < CAR_FORWARD_SPEED - 1e-8:
+            map.car.pos = nearest
             
-            for node in map.graph[map.car.pos]:
-                degrees.append(Vec2.degrees(map.car.j, node - map.car.pos))
+            rotation = float('inf')
             
-            map.car.rotate(min(degrees, key=lambda x: abs(x)))
+            for neighbor in map.graph[nearest]:
+                degree = Vec2.degrees(map.car.j, neighbor - nearest)
+                
+                if abs(rotation) > abs(degree):
+                    rotation = degree
             
-            map.car.move(CAR_FORWARD_SPEED + 0.00000001)
-        else:
-            map.car.move(CAR_FORWARD_SPEED)
+            map.car.rotate(rotation)
+
+        map.car.move(CAR_FORWARD_SPEED)
 
     if key_down.get(b's'):
-        if distance != 0 and distance < CAR_BACKWARD_SPEED:
-            map.car.pos = near
-        
-        elif map.car.pos in map.graph:
-            degrees = []
+        if distance < CAR_BACKWARD_SPEED - 1e-8:
+            map.car.pos = nearest
             
-            for node in map.graph[map.car.pos]:
-                degrees.append(Vec2.degrees(-1 * map.car.j, node - map.car.pos))
+            rotation = float('inf')
             
-            map.car.rotate(min(degrees, key=lambda x: abs(x)))
+            for neighbor in map.graph[nearest]:
+                degree = Vec2.degrees(map.car.j * -1, neighbor - nearest)
+                
+                if abs(rotation) > abs(degree):
+                    rotation = degree
             
-            map.car.move(-CAR_BACKWARD_SPEED - 0.00000001)
-        else:
-            map.car.move(-CAR_BACKWARD_SPEED)
+            map.car.rotate(rotation)
+
+        map.car.move(-CAR_BACKWARD_SPEED)
 
     if key_down.get(b'a'):
-        if map.car.pos in map.graph:
+        if distance < CAR_WIDTH:
+            map.car.pos = nearest
+            
             map.car.rotate_left()
         
     if key_down.get(b'd'):
-        if map.car.pos in map.graph:
+        if distance < CAR_WIDTH:
+            map.car.pos = nearest
+            
             map.car.rotate_right()   
 
     glutPostRedisplay()
-
 
 glutInit()
 glutInitDisplayMode(GLUT_MULTISAMPLE | GLUT_DOUBLE | GLUT_RGB)

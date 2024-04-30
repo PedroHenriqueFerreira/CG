@@ -83,10 +83,10 @@ class Map:
                 
                 # RANDOM POINTS
                 if random() < 0.2:
-                    types = ['hole', 'blitz', 'sensor']
+                    types = ['hole', 'police', 'accident', 'camera']
                     
                     type = choice(types)
-                    name = ['Buraco', 'Blitz', 'Sensor'][types.index(type)]
+                    name = ['Buraco', 'Polícia', 'Acidente', 'Camera'][types.index(type)]
                     
                     if type not in self.points:
                         self.points[type] = []

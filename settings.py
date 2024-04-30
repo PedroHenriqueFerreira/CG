@@ -1,6 +1,6 @@
 from rgb import hex_to_RGB
 
-MAP_PATH = 'assets/russas.geojson'
+MAP_PATH = 'maps/russas.geojson'
 
 WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 800
@@ -9,7 +9,7 @@ ZOOM_FACTOR = 0.1
 
 FPS = 60
 
-CAR_TEXTURE = 'assets/car.png'
+CAR_TEXTURE = 'textures/car.png'
 CAR_FORWARD_SPEED = 0.0025
 CAR_BACKWARD_SPEED = 0.00125
 CAR_ROTATION_SPEED = 0.01
@@ -40,6 +40,15 @@ POINT_COLOR = {
     'hole': hex_to_RGB('#FE0760'),
     'blitz': hex_to_RGB('#FEB907'),
     'sensor': hex_to_RGB('#3300FF'),
+}
+
+POINT_TEXTURE = {
+    'start': 'textures/start.png',
+    'goal': 'textures/goal.png',
+    'hole': 'textures/hole.png',
+    'police': 'textures/police.png',
+    'camera': 'textures/camera.png',
+    'accident': 'textures/accident.png',
 }
 
 TEXT_COLOR = hex_to_RGB('#AAAAAA')

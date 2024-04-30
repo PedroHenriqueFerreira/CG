@@ -13,6 +13,8 @@ class Car:
         
         self.pos = Vec2(0, 0)      
         
+        self.rotation = 0.0
+        
         self.i = Vec2(1, 0)
         self.j = Vec2(0, 1)
 
@@ -26,6 +28,8 @@ class Car:
         self.move(-CAR_BACKWARD_SPEED)
         
     def rotate(self, angle: float):
+        self.rotation += angle
+        
         self.i = Mat2.rotation(angle) * self.i
         self.j = Mat2.rotation(angle) * self.j
         

@@ -27,17 +27,30 @@ class Point:
     
         self.triangles = triangles
     
-    def draw(self):
+    def draw(self, rotate: float, scale: float, texture: int):
+        glBindTexture(GL_TEXTURE_2D, texture)
         glPushMatrix()
-        
+    
         glTranslatef(self.coord.x, self.coord.y, 0)
         glScalef(POINT_WIDTH, POINT_WIDTH, 1)
         
+        glRotatef(rotate, 0, 0, 1)
+        glScalef(scale, scale, 1)
+        
         glBegin(GL_TRIANGLE_FAN)
         
-        for point in self.triangles:
-            glVertex2f(point.x, point.y)
+        # for point in self.triangles:
+        #     glVertex2f(point.x, point.y)
+        
+        glTexCoord2f(0, 0)
+        glVertex2f(-0.5, -0.5)
+        glTexCoord2f(1, 0)
+        glVertex2f(0.5, -0.5)
+        glTexCoord2f(1, 1)
+        glVertex2f(0.5, 0.5)
+        glTexCoord2f(0, 1)
+        glVertex2f(-0.5, 0.5)
             
         glEnd()
-        
         glPopMatrix()
+        glBindTexture(GL_TEXTURE_2D, 0)
