@@ -27,9 +27,7 @@ POLYGON_COLOR = {
 LINE_STRING_WIDTH = 0.01
 LINE_STRING_COLOR = {
     'path': hex_to_RGB('#04E5FE'),
-    'primary': hex_to_RGB('#2B2F34'),
-    'secondary': hex_to_RGB('#2E3338'),
-    'tertiary': hex_to_RGB('#363D44'),
+    'road': hex_to_RGB('#363D44'),
 }
 
 POINT_WIDTH = 0.01

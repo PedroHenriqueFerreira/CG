@@ -13,40 +13,6 @@ class Mat2:
     def __repr__(self):
         return f'Mat2({[[self.a, self.b], [self.c, self.d]]})'
 
-    def __add__(self, other: Union[float, 'Mat2']):
-        if isinstance(other, float | int):
-            other = Mat2(other, other, other, other)
-            
-        return Mat2(
-            self.a + other.a,
-            self.b + other.b,
-            self.c + other.c,
-            self.d + other.d
-        )
-    
-    def __radd__(self, other: Union[float, 'Mat2']):
-        if isinstance(other, float | int):
-            other = Mat2(other, other, other, other)
-            
-        return other + self
-    
-    def __sub__(self, other: Union[float, 'Mat2']):
-        if isinstance(other, float | int):
-            other = Mat2(other, other, other, other)
-            
-        return Mat2(
-            self.a - other.a, 
-            self.b - other.b, 
-            self.c - other.c, 
-            self.d - other.d
-        )
-        
-    def __rsub__(self, other: Union[float, 'Mat2']):
-        if isinstance(other, float | int):
-            other = Mat2(other, other, other, other)
-            
-        return other - self
-    
     def __mul__(self, other: Union[float, 'Vec2', 'Mat2']):
         if isinstance(other, float | int):
             other = Mat2(other, other, other, other)
@@ -68,42 +34,8 @@ class Mat2:
         if isinstance(other, float | int):
             other = Mat2(other, other, other, other)
             
-        return other * self        
-
-    def __truediv__(self, other: Union[float, 'Mat2']):
-        if isinstance(other, float | int):
-            other = Mat2(other, other, other, other)
-            
-        return Mat2(
-            self.a / other.a, 
-            self.b / other.b, 
-            self.c / other.c, 
-            self.d / other.d
-        )
-        
-    def __rtruediv__(self, other: Union[float, 'Mat2']):
-        if isinstance(other, float | int):
-            other = Mat2(other, other, other, other)
-            
-        return other / self
+        return other * self
     
-    def __floordiv__(self, other: Union[float, 'Mat2']):
-        if isinstance(other, float | int):
-            other = Mat2(other, other, other, other)
-            
-        return Mat2(
-            self.a // other.a, 
-            self.b // other.b, 
-            self.c // other.c, 
-            self.d // other.d
-        )
-        
-    def __rfloordiv__(self, other: Union[float, 'Mat2']):
-        if isinstance(other, float | int):
-            other = Mat2(other, other, other, other)
-            
-        return other // self 
-
     @staticmethod
     def rotation(angle: float):
         sin_x = sin(radians(angle))

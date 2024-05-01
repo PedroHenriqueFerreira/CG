@@ -34,6 +34,8 @@ class Map:
         # GRAPH
         self.graph: dict[Vec2, list[Vec2]] = {}
         
+        self.distance = 0.0
+        
         self.load()
         
     def load(self):
@@ -61,25 +63,25 @@ class Map:
             geometry_type = feature['geometry']['type']
             
             if geometry_type == 'LineString':
-                if properties.get('highway') in ('motorway', 'motorway_link', 'trunk', 'trunk_link', 'primary', 'primary_link'):
-                    type = 'primary'
-                
-                elif properties.get('highway') in ('secondary', 'secondary_link', 'tertiary', 'tertiary_link', 'road'):
-                    type = 'secondary'
-                
-                elif properties.get('highway') in ('living_street', 'pedestrian', 'unclassified', 'residential'):
-                    type = 'tertiary'
-                
-                else:
+                if properties.get('highway') not in (
+                    'motorway', 'motorway_link', 'trunk', 
+                    'trunk_link', 'primary', 'primary_link',
+                    
+                    'secondary', 'secondary_link', 'tertiary', 
+                    'tertiary_link', 'road',
+                    
+                    'living_street', 'pedestrian', 'unclassified', 
+                    'residential',
+                ):
                     continue
                 
                 name = properties.get('name', '')
                 coords = [self.normalize(Vec2(*coord)) for coord in geometry_coords]                        
                 
-                if type not in self.line_strings:
-                    self.line_strings[type] = []
+                if 'road' not in self.line_strings:
+                    self.line_strings['road'] = []
                 
-                self.line_strings[type].append(LineString(name, coords))
+                self.line_strings['road'].append(LineString(name, coords))
                 
                 # RANDOM POINTS
                 if random() < 0.1:
@@ -184,6 +186,7 @@ class Map:
             coords = [self.normalize(point) for point in path]
             
             self.line_strings['path'] = [LineString('Percurso', coords)]
+            self.distance = distance
 
             # CHANGE
             self.car.pos = start[0].coord

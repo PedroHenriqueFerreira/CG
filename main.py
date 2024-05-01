@@ -4,6 +4,7 @@ from OpenGL.GLUT import *
 
 from settings import *
 
+from structures.matrix import Mat2
 from structures.vector import Vec2
 from objects.map import Map
 from objects.texture import Texture
@@ -52,6 +53,10 @@ sign = -1
 pulse = 1
 
 cam = Camera()
+
+road = None
+
+km = 0
 
 def paintGL():
     global pulse, sign
@@ -133,6 +138,22 @@ def paintGL():
             for char in polygon.name:
                 glutBitmapCharacter(GLUT_BITMAP_9_BY_15, ord(char))
 
+    aa = Mat2.rotation(map.car.rotation) * Vec2(-CAR_WIDTH, -CAR_WIDTH) + map.car.pos
+
+    glRasterPos2f(aa.x, aa.y)
+    
+    if road is not None:
+        for char in road.name:
+            glutBitmapCharacter(GLUT_BITMAP_9_BY_15, ord(char))
+            
+    bb = Mat2.rotation(map.car.rotation) * Vec2(CAR_WIDTH, -CAR_WIDTH) + map.car.pos
+
+    glRasterPos2f(bb.x, bb.y)
+    
+    if road is not None:
+        for char in  f'{km:.2f}' + ' km / ' + f'{map.distance:.2f}' + ' km':
+            glutBitmapCharacter(GLUT_BITMAP_9_BY_15, ord(char))
+
     # DRAW CAR
     map.car.draw()
 
@@ -183,7 +204,8 @@ def reshapeGL(width: int, height: int):
 
     glViewport(0, 0, width, height)
 
-last: Vec2 | None = None
+prev: Vec2 | None = None
+next: Vec2 | None = None
 
 def timerGL(value: int):
     global pos, i, j
@@ -193,22 +215,28 @@ def timerGL(value: int):
     nearest = map.car.pos.nearest(map.graph.keys())
     distance = Vec2.distance(map.car.pos, nearest)
     
+    global prev, next, road
+    
     if key_down.get(b'w'):
         if distance < CAR_FORWARD_SPEED - 1e-8:
             map.car.pos = nearest
         
             rotation = float('inf')
+            index = 0
             
-            for neighbor in map.graph[nearest]:
+            for i, neighbor in enumerate(map.graph[nearest]):
                 degree = Vec2.degrees(map.car.j, neighbor - nearest)
                 
                 if abs(rotation) > abs(degree):
                     rotation = degree
+                    index = i
             
             if abs(rotation) < 45:
+                next = map.graph[nearest][index]
+                
                 map.car.rotate(rotation)
                 map.car.move(CAR_FORWARD_SPEED)
-
+                
         else: 
             map.car.move(CAR_FORWARD_SPEED)
 
@@ -217,14 +245,18 @@ def timerGL(value: int):
             map.car.pos = nearest
         
             rotation = float('inf')
+            index = 0
             
-            for neighbor in map.graph[nearest]:
+            for i, neighbor in enumerate(map.graph[nearest]):
                 degree = Vec2.degrees(map.car.j * -1, neighbor - nearest)
                 
                 if abs(rotation) > abs(degree):
                     rotation = degree
+                    index = i
             
             if abs(rotation) < 45:
+                next = map.graph[nearest][index]
+                
                 map.car.rotate(rotation)
                 map.car.move(-CAR_BACKWARD_SPEED)    
                 
@@ -245,21 +277,39 @@ def timerGL(value: int):
 
     path = map.line_strings.get('path', [])
     
-    global last
-    
+    if distance < CAR_WIDTH:
+        for line_string in map.line_strings['road']:
+            if nearest in line_string.coords and next is not None and next in line_string.coords:
+                road = line_string
+                break
+            
+    global km
+            
     if len(path) > 0:
         path = path[0].coords
         
         if distance < CAR_WIDTH and nearest in path:
-            if last is None or nearest != last:
-                prev_last = last
+            index = path.index(nearest)
+            
+            a = 0
+            
+            for i in range(index + 1):
+                if i != 0:
+                    a += Vec2.haversine(map.original(path[i]), map.original(path[i - 1]))
+            
+            km = a
+            
+            if prev is None or nearest != prev:
+                prev_last = prev
                 
-                last = nearest
+                prev = nearest
                 
                 if nearest == path[-1]:
                     playsound('sounds/finish.mp3', False)
                 
-                    last = None
+                    map.offset = map.car.pos
+                    
+                    prev = None
                     map.points['start'] = []
                     map.points['goal'] = []
                     map.line_strings['path'] = []
@@ -268,8 +318,6 @@ def timerGL(value: int):
                     next = path[path.index(nearest) + 1]
                     
                     degree = Vec2.degrees(map.car.j, next - nearest)
-                    
-                    print(degree)
                     
                     if abs(degree) > 135:
                         playsound('sounds/uturn.mp3', False)
