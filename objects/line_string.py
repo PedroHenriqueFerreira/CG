@@ -1,7 +1,24 @@
 from OpenGL.GL import *
 
-from settings import LINE_STRING_WIDTH
+from math import cos, sin, radians
+
+from settings import LINE_STRING_WIDTH, POINT_SEGMENTS
 from structures.vector import Vec2
+
+def circle():
+    triangles: list[Vec2] = [Vec2(0, 0)]
+    
+    step = 360 / POINT_SEGMENTS
+    
+    for i in range(POINT_SEGMENTS + 1):
+        x = cos(radians(i * step))
+        y = sin(radians(i * step))
+        
+        triangles.append(0.5 * Vec2(x, y))
+
+    return triangles
+
+triangles = circle()
 
 class LineString:
     def __init__(self, name: str, coords: list[Vec2]):
@@ -19,6 +36,21 @@ class LineString:
             glVertex2f(point.x, point.y)
             
         glEnd()
+        
+        for coord in [self.coords[0], self.coords[-1]]:
+            glPushMatrix()
+            glTranslatef(coord.x, coord.y, 0)
+            glScalef(LINE_STRING_WIDTH, LINE_STRING_WIDTH, 1)
+            
+            glBegin(GL_TRIANGLE_FAN)
+            
+            for point in triangles:
+                glVertex2f(point.x, point.y)
+                
+            glEnd()
+            
+            glPopMatrix()
+
     
     def load(self):
         w = LINE_STRING_WIDTH / 2

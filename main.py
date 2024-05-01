@@ -252,11 +252,14 @@ def timerGL(value: int):
         
         if distance < CAR_WIDTH and nearest in path:
             if last is None or nearest != last:
+                prev_last = last
+                
                 last = nearest
                 
                 if nearest == path[-1]:
                     playsound('sounds/finish.mp3', False)
                 
+                    last = None
                     map.points['start'] = []
                     map.points['goal'] = []
                     map.line_strings['path'] = []
@@ -274,8 +277,8 @@ def timerGL(value: int):
                         playsound('sounds/right.mp3', False)
                     elif degree > 45:
                         playsound('sounds/left.mp3', False)
-                    elif len(map.graph[nearest]) > 2:
-                            playsound('sounds/forward.mp3', False)
+                    elif prev_last is None or len(map.graph[nearest]) > 2:
+                        playsound('sounds/forward.mp3', False)    
 
     glutPostRedisplay()
 

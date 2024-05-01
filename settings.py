@@ -33,7 +33,7 @@ LINE_STRING_COLOR = {
 }
 
 POINT_WIDTH = 0.01
-POINT_SEGMENTS = 40
+POINT_SEGMENTS = 30
 POINT_COLOR = {
     'start': hex_to_RGB('#85F2FF'),
     'goal': hex_to_RGB('#85F2FF'),
