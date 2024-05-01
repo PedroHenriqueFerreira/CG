@@ -82,7 +82,7 @@ class Map:
                 self.line_strings[type].append(LineString(name, coords))
                 
                 # RANDOM POINTS
-                if random() < 0.2:
+                if random() < 0.1:
                     types = ['hole', 'police', 'accident', 'camera']
                     
                     type = choice(types)

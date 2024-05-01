@@ -9,4 +9,4 @@ class Camera:
             self.values = values
         else:
             for i, value in enumerate(values):
-                self.values[i] = self.values[i] * 0.92 + value * 0.08
+                self.values[i] = self.values[i] * 0.9 + value * 0.1

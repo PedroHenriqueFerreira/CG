@@ -9,6 +9,8 @@ from objects.map import Map
 from objects.texture import Texture
 from objects.camera import Camera
 
+from playsound import playsound
+
 map = None
 
 window = Vec2(WINDOW_WIDTH, WINDOW_HEIGHT)
@@ -69,7 +71,7 @@ def paintGL():
     glLoadIdentity()
 
     if len(map.line_strings.get('path', [])) > 0:
-        camera = map.car.pos - map.car.j * 0.025
+        camera = map.car.pos - map.car.j * 0.01
 
         cam.update([
             camera.x, camera.y, 1 / map.scale, 
@@ -117,19 +119,19 @@ def paintGL():
             point.draw(map.car.rotation, 1, texture[type].id)
 
     # DRAW POLYGON NAMES
-    glColor3f(*TEXT_COLOR)
-    for type in map.polygons:
-        for polygon in map.polygons[type]:
-            text_size = 2 * polygon.name_size / (window * map.scale)
+    # glColor3f(*TEXT_COLOR)
+    # for type in map.polygons:
+    #     for polygon in map.polygons[type]:
+    #         text_size = 2 * polygon.name_size / (window * map.scale)
 
-            if polygon.width < text_size.x:
-                continue
+    #         if polygon.width < text_size.x:
+    #             continue
 
-            glRasterPos2f(polygon.center.x - text_size.x / 2,
-                          polygon.center.y - text_size.y / 2)
+    #         glRasterPos2f(polygon.center.x - text_size.x / 2,
+    #                       polygon.center.y - text_size.y / 2)
 
-            for char in polygon.name:
-                glutBitmapCharacter(GLUT_BITMAP_9_BY_15, ord(char))
+    #         for char in polygon.name:
+    #             glutBitmapCharacter(GLUT_BITMAP_9_BY_15, ord(char))
 
     # DRAW CAR
     map.car.draw()
@@ -181,6 +183,8 @@ def reshapeGL(width: int, height: int):
 
     glViewport(0, 0, width, height)
 
+visited = []
+
 def timerGL(value: int):
     global pos, i, j
 
@@ -192,7 +196,7 @@ def timerGL(value: int):
     if key_down.get(b'w'):
         if distance < CAR_FORWARD_SPEED - 1e-8:
             map.car.pos = nearest
-            
+        
             rotation = float('inf')
             
             for neighbor in map.graph[nearest]:
@@ -201,14 +205,19 @@ def timerGL(value: int):
                 if abs(rotation) > abs(degree):
                     rotation = degree
             
-            map.car.rotate(rotation)
+            if abs(rotation) < 45:
+                map.car.rotate(rotation)
 
-        map.car.move(CAR_FORWARD_SPEED)
+            if distance == 0 and rotation == 0:
+                map.car.move(CAR_FORWARD_SPEED)
+            
+        else: 
+            map.car.move(CAR_FORWARD_SPEED)
 
     if key_down.get(b's'):
         if distance < CAR_BACKWARD_SPEED - 1e-8:
             map.car.pos = nearest
-            
+        
             rotation = float('inf')
             
             for neighbor in map.graph[nearest]:
@@ -217,9 +226,14 @@ def timerGL(value: int):
                 if abs(rotation) > abs(degree):
                     rotation = degree
             
-            map.car.rotate(rotation)
-
-        map.car.move(-CAR_BACKWARD_SPEED)
+            if abs(rotation) < 45:
+                map.car.rotate(rotation)
+                
+            if distance == 0 and rotation == 0:
+                map.car.move(-CAR_BACKWARD_SPEED)    
+            
+        else: 
+            map.car.move(-CAR_BACKWARD_SPEED)
 
     if key_down.get(b'a'):
         if distance < CAR_WIDTH:
@@ -232,6 +246,41 @@ def timerGL(value: int):
             map.car.pos = nearest
             
             map.car.rotate_right()   
+
+    path = map.line_strings.get('path', [])
+    
+    if len(path) > 0:
+        path = list(reversed(path[0].coords))
+        
+        for i, item in enumerate(path):
+            if map.car.pos != item:
+                continue
+            
+            if item in visited:
+                continue
+            
+            if i + 1 == len(path):
+                playsound('sounds/finish.mp3', False)
+                
+                visited.append(item)
+                break
+            
+            next = path[i + 1]
+            
+            degree = Vec2.degrees(map.car.j, next - item)
+            
+            if degree < -45:
+                playsound('sounds/right.mp3', False)
+            elif degree > 45:
+                playsound('sounds/left.mp3', False)
+            else:
+                playsound('sounds/forward.mp3', False)
+            
+            print(degree)
+            
+            visited.append(item)
+            
+            break
 
     glutPostRedisplay()
 
