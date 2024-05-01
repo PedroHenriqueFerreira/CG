@@ -119,19 +119,19 @@ def paintGL():
             point.draw(map.car.rotation, 1, texture[type].id)
 
     # DRAW POLYGON NAMES
-    # glColor3f(*TEXT_COLOR)
-    # for type in map.polygons:
-    #     for polygon in map.polygons[type]:
-    #         text_size = 2 * polygon.name_size / (window * map.scale)
+    glColor3f(*TEXT_COLOR)
+    for type in map.polygons:
+        for polygon in map.polygons[type]:
+            text_size = 2 * polygon.name_size / (window * map.scale)
 
-    #         if polygon.width < text_size.x:
-    #             continue
+            if polygon.width < text_size.x:
+                continue
 
-    #         glRasterPos2f(polygon.center.x - text_size.x / 2,
-    #                       polygon.center.y - text_size.y / 2)
+            glRasterPos2f(polygon.center.x - text_size.x / 2,
+                          polygon.center.y - text_size.y / 2)
 
-    #         for char in polygon.name:
-    #             glutBitmapCharacter(GLUT_BITMAP_9_BY_15, ord(char))
+            for char in polygon.name:
+                glutBitmapCharacter(GLUT_BITMAP_9_BY_15, ord(char))
 
     # DRAW CAR
     map.car.draw()
@@ -183,7 +183,7 @@ def reshapeGL(width: int, height: int):
 
     glViewport(0, 0, width, height)
 
-visited = []
+last: Vec2 | None = None
 
 def timerGL(value: int):
     global pos, i, j
@@ -207,10 +207,8 @@ def timerGL(value: int):
             
             if abs(rotation) < 45:
                 map.car.rotate(rotation)
-
-            if distance == 0 and rotation == 0:
                 map.car.move(CAR_FORWARD_SPEED)
-            
+
         else: 
             map.car.move(CAR_FORWARD_SPEED)
 
@@ -228,10 +226,8 @@ def timerGL(value: int):
             
             if abs(rotation) < 45:
                 map.car.rotate(rotation)
-                
-            if distance == 0 and rotation == 0:
                 map.car.move(-CAR_BACKWARD_SPEED)    
-            
+                
         else: 
             map.car.move(-CAR_BACKWARD_SPEED)
 
@@ -249,38 +245,37 @@ def timerGL(value: int):
 
     path = map.line_strings.get('path', [])
     
+    global last
+    
     if len(path) > 0:
-        path = list(reversed(path[0].coords))
+        path = path[0].coords
         
-        for i, item in enumerate(path):
-            if map.car.pos != item:
-                continue
-            
-            if item in visited:
-                continue
-            
-            if i + 1 == len(path):
-                playsound('sounds/finish.mp3', False)
+        if distance < CAR_WIDTH and nearest in path:
+            if last is None or nearest != last:
+                last = nearest
                 
-                visited.append(item)
-                break
-            
-            next = path[i + 1]
-            
-            degree = Vec2.degrees(map.car.j, next - item)
-            
-            if degree < -45:
-                playsound('sounds/right.mp3', False)
-            elif degree > 45:
-                playsound('sounds/left.mp3', False)
-            else:
-                playsound('sounds/forward.mp3', False)
-            
-            print(degree)
-            
-            visited.append(item)
-            
-            break
+                if nearest == path[-1]:
+                    playsound('sounds/finish.mp3', False)
+                
+                    map.points['start'] = []
+                    map.points['goal'] = []
+                    map.line_strings['path'] = []
+                    
+                else:
+                    next = path[path.index(nearest) + 1]
+                    
+                    degree = Vec2.degrees(map.car.j, next - nearest)
+                    
+                    print(degree)
+                    
+                    if abs(degree) > 135:
+                        playsound('sounds/uturn.mp3', False)
+                    elif degree < -45:
+                        playsound('sounds/right.mp3', False)
+                    elif degree > 45:
+                        playsound('sounds/left.mp3', False)
+                    elif len(map.graph[nearest]) > 2:
+                            playsound('sounds/forward.mp3', False)
 
     glutPostRedisplay()
 

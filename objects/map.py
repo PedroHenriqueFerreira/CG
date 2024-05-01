@@ -187,8 +187,8 @@ class Map:
 
             # CHANGE
             self.car.pos = start[0].coord
+            self.car.rotate(Vec2.degrees(self.car.j, coords[1] - coords[0]))
 
- 
     def construct_path(self):
         start = self.original(self.points['start'][0].coord)
         goal = self.original(self.points['goal'][0].coord)
@@ -210,7 +210,7 @@ class Map:
                     current = cameFrom[current]
                     path.append(current)
                 
-                return path, gScore[goal]
+                return reversed(path), gScore[goal]
 
             openSet.remove(current)
 
