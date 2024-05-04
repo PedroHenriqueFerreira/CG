@@ -24,10 +24,10 @@ key_down: dict[str, bool] = {}
 texture: dict[str, Texture] = {}
 
 def normalize(x: int, y: int):
-    coord = (Vec2(x, window.y - y) / window) * 2 - 1
-    aspect_ratio = Vec2(window.x / window.y, 1)
+    normalized = (Vec2(x, window.y - y) / window) * 2 - 1
+    aspect_ratio = window / window.y
 
-    return (coord * aspect_ratio / map.scale) + map.offset
+    return (normalized * aspect_ratio / map.scale) + map.offset
 
 def initializeGL():
     global map
@@ -41,8 +41,8 @@ def initializeGL():
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-    glPointSize(6)
     glLineWidth(2)
+    glPointSize(3)
 
     map = Map(MAP_PATH)
     
@@ -54,11 +54,15 @@ pulse = 1
 
 cam = Camera()
 
-road = None
-
 km = 0
 
+counter = 0
+
 def paintGL():
+    global counter
+    
+    counter += 1
+    
     global pulse, sign
     
     if pulse >= 1.25 or pulse <= 1:
@@ -74,6 +78,8 @@ def paintGL():
 
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
+
+    camera = None
 
     if len(map.line_strings.get('path', [])) > 0:
         camera = map.car.pos - map.car.j * 0.01
@@ -123,40 +129,37 @@ def paintGL():
         for point in map.points[type]:
             point.draw(map.car.rotation, 1, texture[type].id)
 
-    # DRAW POLYGON NAMES
     glColor3f(*TEXT_COLOR)
-    for type in map.polygons:
-        for polygon in map.polygons[type]:
-            text_size = 2 * polygon.name_size / (window * map.scale)
+    # for type in map.polygons:
+    #     for polygon in map.polygons[type]:
+    #         polygon.name.draw(map)
 
-            if polygon.width < text_size.x:
-                continue
+    # DRAW POLYGON NAMES
+    # glColor3f(*TEXT_COLOR)
+    # for type in map.polygons:
+    #     for polygon in map.polygons[type]:
+    #         text_size = polygon.name_size / (window * map.scale)
 
-            glRasterPos2f(polygon.center.x - text_size.x / 2,
-                          polygon.center.y - text_size.y / 2)
+    #         if polygon.width < text_size.x:
+    #             continue
 
-            for char in polygon.name:
-                glutBitmapCharacter(GLUT_BITMAP_9_BY_15, ord(char))
+    #         glRasterPos2f(polygon.center.x - text_size.x,
+    #                       polygon.center.y - text_size.y)
 
-    aa = Mat2.rotation(map.car.rotation) * Vec2(-CAR_WIDTH, -CAR_WIDTH) + map.car.pos
-
-    glRasterPos2f(aa.x, aa.y)
-    
-    if road is not None:
-        for char in road.name:
-            glutBitmapCharacter(GLUT_BITMAP_9_BY_15, ord(char))
-            
-    bb = Mat2.rotation(map.car.rotation) * Vec2(CAR_WIDTH, -CAR_WIDTH) + map.car.pos
-
-    glRasterPos2f(bb.x, bb.y)
-    
-    if road is not None:
-        for char in  f'{km:.2f}' + ' km / ' + f'{map.distance:.2f}' + ' km':
-            glutBitmapCharacter(GLUT_BITMAP_9_BY_15, ord(char))
+    #         for char in polygon.name:
+    #             glutBitmapCharacter(GLUT_BITMAP_9_BY_15, ord(char))
 
     # DRAW CAR
-    map.car.draw()
 
+    for a in map.line_strings['road']:
+        a.name.draw(map)
+    
+    for type in map.polygons:
+        for polygon in map.polygons[type]:
+            polygon.name.draw(map)
+    
+    map.car.draw()
+    
     glutSwapBuffers()
 
 def mouseGL(button: int, state: int, x: int, y: int):
@@ -215,7 +218,7 @@ def timerGL(value: int):
     nearest = map.car.pos.nearest(map.graph.keys())
     distance = Vec2.distance(map.car.pos, nearest)
     
-    global prev, next, road
+    global prev, next
     
     if key_down.get(b'w'):
         if distance < CAR_FORWARD_SPEED - 1e-8:
@@ -277,12 +280,6 @@ def timerGL(value: int):
 
     path = map.line_strings.get('path', [])
     
-    if distance < CAR_WIDTH:
-        for line_string in map.line_strings['road']:
-            if nearest in line_string.coords and next is not None and next in line_string.coords:
-                road = line_string
-                break
-            
     global km
             
     if len(path) > 0:

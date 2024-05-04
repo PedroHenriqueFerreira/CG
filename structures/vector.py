@@ -118,13 +118,6 @@ class Vec2:
         return a.x * b.y - a.y * b.x
 
     @staticmethod
-    def center(*vectors: 'Vec2'):
-        x = sum(v.x for v in vectors) / len(vectors)
-        y = sum(v.y for v in vectors) / len(vectors)
-        
-        return Vec2(x, y)
-
-    @staticmethod
     def min(*vectors: 'Vec2'):
         return Vec2(min(v.x for v in vectors), min(v.y for v in vectors))
 
@@ -148,3 +141,4 @@ class Vec2:
         r = 6371.0088
 
         return r * c
+

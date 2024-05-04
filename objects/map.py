@@ -20,6 +20,9 @@ class Map:
         self.min = Vec2(float('inf'), float('inf'))
         self.max = Vec2(float('-inf'), float('-inf'))
         
+        self.delta = Vec2(0, 0)
+        self.aspect_ratio = Vec2(1, 1)
+        
         # VIEW
         self.scale = 1.0
         self.offset = Vec2(0, 0)
@@ -55,6 +58,9 @@ class Map:
             
             self.min = Vec2.min(self.min, *coords)
             self.max = Vec2.max(self.max, *coords)
+        
+        self.delta = self.max - self.min
+        self.aspect_ratio = self.delta / self.delta.y
         
         for feature in data['features']:
             properties: dict[str, Any] = feature['properties']
@@ -137,12 +143,11 @@ class Map:
             
         self.car.pos = list(self.graph.keys())[0]
 
-
     def normalize(self, coord: Vec2):
-        return ((coord - self.min) / (self.max - self.min)) * 2 - 1
+        return (((coord - self.min) / self.delta) * 2 - 1) * self.aspect_ratio
 
     def original(self, coord: Vec2):
-        return ((coord + 1) / 2) * (self.max - self.min) + self.min
+        return ((coord / self.aspect_ratio + 1) / 2) * self.delta + self.min
       
     def zoom(self, coord: Vec2, direction: float):
         scale = self.scale * (1 + ZOOM_FACTOR) ** direction

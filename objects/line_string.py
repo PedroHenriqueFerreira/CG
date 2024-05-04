@@ -5,6 +5,8 @@ from math import cos, sin, radians
 from settings import LINE_STRING_WIDTH, POINT_SEGMENTS
 from structures.vector import Vec2
 
+from objects.text import Text
+
 def circle():
     triangles: list[Vec2] = [Vec2(0, 0)]
     
@@ -20,16 +22,23 @@ def circle():
 
 triangles = circle()
 
+from rgb import random_RGB
+
 class LineString:
     def __init__(self, name: str, coords: list[Vec2]):
-        self.name = name
         self.coords = coords
+        
+        self.name = Text(name, 0.02, coords)
         
         self.quads: list[Vec2] = []
         
         self.load()
-    
+        
+        self.color = random_RGB()
+        
     def draw(self):
+        # glColor3f(*self.color)
+        
         glBegin(GL_QUAD_STRIP)
         
         for point in self.quads:

@@ -2,16 +2,18 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 
 from structures.vector import Vec2
+from objects.text import Text
 
 class Polygon:
     def __init__(self, name: str, coords: list[Vec2]):
-        self.name = name
         self.coords = coords
         
-        self.center = Vec2(0, 0)
-        self.width = 0
+        min = Vec2.min(*coords)
+        max = Vec2.max(*coords)
         
-        self.name_size = Vec2(0, 0)
+        y = (min.y + max.y) / 2
+        
+        self.name = Text(name, 0.035, [Vec2(min.x, y), Vec2(max.x, y)])
         
         self.triangles: list[Vec2] = []
         
@@ -26,15 +28,6 @@ class Polygon:
         glEnd()
     
     def load(self):
-        min = Vec2.min(*self.coords)
-        max = Vec2.max(*self.coords)
-        
-        self.center = (min + max) / 2
-        self.width = max.x - min.x
-        
-        self.name_size.x = sum(glutBitmapWidth(GLUT_BITMAP_9_BY_15, ord(c)) for c in self.name)
-        self.name_size.y = glutBitmapHeight(GLUT_BITMAP_9_BY_15)
-        
         if self.is_clockwise(self.coords):
             coords = self.coords[::-1]
         else:
