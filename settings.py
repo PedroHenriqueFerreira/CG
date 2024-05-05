@@ -17,34 +17,32 @@ CAR_WIDTH = 0.005
 
 BG_COLOR = hex_to_RGB('#555A60')
 
-POLYGON_COLOR = {
-    'grass': hex_to_RGB('#527C6D'),
-    'water': hex_to_RGB('#516C7D'),
-    'building': hex_to_RGB('#464B51'),
-    'other': hex_to_RGB('#51565C'),
-}
+GREEN_COLOR = hex_to_RGB('#527C6D')
+WATER_COLOR = hex_to_RGB('#516C7D')
+BUILDING_COLOR = hex_to_RGB('#464B51')
+OTHER_COLOR = hex_to_RGB('#51565C')
 
-LINE_STRING_WIDTH = 0.005
+LINE_STRING_SIZE = 0.006 # IN KM
+LINE_STRING_SEGMENTS = 30 # IN INT
+
+TEXT_SIZE = 0.015 # IN %
+TEXT_MIN_SIZE = 0.002 # IN KM
+
+ROAD_COLOR = hex_to_RGB('#363D44')
+PATH_COLOR = hex_to_RGB('#04E5FE')
+
 LINE_STRING_COLOR = {
     'path': hex_to_RGB('#04E5FE'),
     'road': hex_to_RGB('#363D44'),
 }
 
 POINT_WIDTH = 0.005
-POINT_SEGMENTS = 30
-POINT_COLOR = {
-    'start': hex_to_RGB('#85F2FF'),
-    'goal': hex_to_RGB('#85F2FF'),
-    'hole': hex_to_RGB('#FE0760'),
-    'blitz': hex_to_RGB('#FEB907'),
-    'sensor': hex_to_RGB('#3300FF'),
-}
 
 POINT_TEXTURE = {
     'start': 'textures/start.png',
     'goal': 'textures/goal.png',
-    'hole': 'textures/hole.png',
-    'police': 'textures/police.png',
+    'pothole': 'textures/pothole.png',
+    'cop': 'textures/cop.png',
     'camera': 'textures/camera.png',
     'accident': 'textures/accident.png',
 }

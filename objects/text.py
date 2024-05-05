@@ -2,23 +2,51 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
-from unidecode import unidecode
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from objects.map import Map
 
 from structures.vector import Vec2
 
-from settings import LINE_STRING_WIDTH
+from settings import TEXT_SIZE, TEXT_MIN_SIZE
+
+utf8_to_ascii: dict[str, str] = {
+    'À': 'A', 'à': 'a',
+    'Á': 'A', 'á': 'a',
+    'Â': 'A', 'â': 'a',
+    'Ã': 'A', 'ã': 'a',
+    'Ç': 'C', 'ç': 'c',
+    'È': 'E', 'è': 'e',
+    'É': 'E', 'é': 'e',
+    'Ê': 'E', 'ê': 'e',
+    'Ì': 'I', 'ì': 'i',
+    'Í': 'I', 'í': 'i',
+    'Î': 'I', 'î': 'i',
+    'Ò': 'O', 'ò': 'o',
+    'Ó': 'O', 'ó': 'o',
+    'Ô': 'O', 'ô': 'o',
+    'Õ': 'O', 'õ': 'o',
+    'Ù': 'U', 'ù': 'u',
+    'Ú': 'U', 'ú': 'u',
+    'Û': 'U', 'û': 'u'  
+}
 
 class Text:
-    def __init__(self, value: str, size: float, coords: list[Vec2]):
-        self.value = unidecode(value)
-        self.size = size
+    def __init__(self, map: 'Map', value: str, coords: list[Vec2]):
+        self.map = map
+        
+        self.value = value
         self.coords = coords
+        
+        self.size = 0
+        self.min_size = 0
         
         self.coords_distance: list[float] = []
         self.coords_rotation: list[float] = []
         self.coords_width = 0
         
-        self.chars_width: dict[str, float] = {}
+        self.chars_width: list[float] = []
         
         self.width = 0
         self.height = 0
@@ -27,8 +55,13 @@ class Text:
         self.loaded = False
         
     def load(self):
+        self.value = ''.join(utf8_to_ascii.get(c, c) for c in self.value)
+        
         if abs(Vec2.degrees(Vec2(1, 0), self.coords[-1] - self.coords[0])) > 90:
             self.coords = self.coords[::-1]
+        
+        self.size = self.map.transform_pct(TEXT_SIZE)
+        self.min_size = self.map.transform_km(TEXT_MIN_SIZE)
         
         for curr, next in zip(self.coords[:-1], self.coords[1:]):
             distance = Vec2.distance(curr, next)
@@ -36,31 +69,23 @@ class Text:
             
             self.coords_distance.append(distance)
             self.coords_rotation.append(rotation)
-                 
+            
             self.coords_width += distance
 
-        for c in self.value:
-            width = glutStrokeWidth(GLUT_STROKE_MONO_ROMAN, ord(c))
-            
-            self.chars_width[c] = width
-            self.width += width
-            
-        self.height = glutStrokeHeight(GLUT_STROKE_MONO_ROMAN)
+        self.chars_width = [glutStrokeWidth(GLUT_STROKE_MONO_ROMAN, ord(c)) for c in self.value]
         
+        self.width = sum(self.chars_width)
+        self.height = glutStrokeHeight(GLUT_STROKE_MONO_ROMAN)
         self.scale = self.size / self.height
         
         self.loaded = True
-        
-        self.test = Vec2(0, 0)
        
-    def split(self, width: float, scale: float):
+    def split(self, scale: float, width: float):
+        data: list[tuple[str, Vec2, float]] = []
+
         start = (self.coords_width - width) / 2
-        
-        positions: list[Vec2] = []
-        rotations: list[float] = []
-        values: list[str] = []
       
-        cum_distance = 0
+        cum_distance = 0.0
         char_index = 0
       
         for rotation, distance, curr, next in zip(
@@ -76,69 +101,68 @@ class Text:
                 continue
                 
             elif prev_cum_distance < start:
-                expected = start - prev_cum_distance
+                expected_distance = start - prev_cum_distance
                 
-                positions.append(curr + (next - curr) * expected / distance)
-                rotations.append(rotation)
+                pos = curr + (next - curr) * expected_distance / distance
+                rot = rotation
                 
-                max_cum_char_width = distance - expected
+                max_cum_char_width = distance - expected_distance
+                
             elif char_index < len(self.value):
-                positions.append(curr)
-                rotations.append(rotation)
+                pos = curr
+                rot = rotation
                 
                 max_cum_char_width = distance
             else:
                 break
             
-            value = ''
+            val = ''
             cum_char_width = 0
             
             for char in self.value[char_index:]:
-                char_width = self.chars_width[char] * self.scale / scale
+                index = self.value.index(char)
+                
+                char_width = self.chars_width[index] * self.scale / scale
                 cum_char_width += char_width
                 
                 if cum_char_width > max_cum_char_width:
                     break
                 
-                value += char
+                val += char
                 char_index += 1
                 
-            values.append(value)
+            data.append((pos, rot, val))
         
-        return positions, rotations, values
+        if self.value != ''.join(v for _, _, v in data):
+            return []
         
-    def draw(self, map):
-        if not self.value:
-            return
+        return data
         
+    def draw(self):
         if not self.loaded:
             self.load()
+ 
+        height = self.height * self.scale / self.map.scale
         
-        if self.height * self.scale / map.scale < LINE_STRING_WIDTH / 2:
-            scale = (self.height * self.scale) / (LINE_STRING_WIDTH / 2)
+        if height < self.min_size:
+            scale = (self.height * self.scale) / self.min_size
         else:
-            scale = map.scale
-        
-        # if map.scale < 5:
-        #     scale = map.scale
-        # else:
-        #     scale = 5
+            scale = self.map.scale
         
         width = self.width * self.scale / scale
         
         if width > self.coords_width:
             return
-       
-        for p, r, v in zip(*self.split(width, scale)):
+        
+        for pos, rot, val in self.split(scale, width):
             glPushMatrix()
             
-            glTranslatef(p.x, p.y, 0)
-            glRotatef(r, 0, 0, 1)
+            glTranslatef(pos.x, pos.y, 0)
+            glRotatef(rot, 0, 0, 1)
             glScale(self.scale / scale, self.scale / scale, 1)
-            
             glTranslatef(0, -self.height / 2, 0)
             
-            for char in v.encode():
-                glutStrokeCharacter(GLUT_STROKE_MONO_ROMAN, char)
+            for char in val:
+                glutStrokeCharacter(GLUT_STROKE_MONO_ROMAN, ord(char))
             
             glPopMatrix()

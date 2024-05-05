@@ -8,6 +8,7 @@ from structures.vector import Vec2
 from objects.line_string import LineString
 from objects.polygon import Polygon
 from objects.point import Point
+from objects.text import Text
 from objects.car import Car
 
 from settings import ZOOM_FACTOR
@@ -16,27 +17,49 @@ class Map:
     def __init__(self, filepath: str):
         self.filepath = filepath
         
-        # BOX LIMITS
+        # BOX
         self.min = Vec2(float('inf'), float('inf'))
         self.max = Vec2(float('-inf'), float('-inf'))
-        
         self.delta = Vec2(0, 0)
-        self.aspect_ratio = Vec2(1, 1)
         
         # VIEW
         self.scale = 1.0
         self.offset = Vec2(0, 0)
         
-        # ELEMENTS
-        self.line_strings: dict[str, list[LineString]] = {}
-        self.polygons: dict[str, list[Polygon]] = {}
-        self.points: dict[str, list[Point]] = {}
-        
-        self.car = Car()
-        
         # GRAPH
         self.graph: dict[Vec2, list[Vec2]] = {}
         
+        # FIXED ELEMENTS
+        
+        self.roads: list[LineString] = []
+        
+        self.greens: list[Polygon] = []
+        self.waters: list[Polygon] = []
+        self.buildings: list[Polygon] = []
+        self.others: list[Polygon] = []
+        
+        self.texts: list[Text] = []
+        
+        # RANDOM ELEMENTS
+        
+        self.heavy_traffics: list[LineString] = []
+        self.moderate_traffics: list[LineString] = []
+        
+        self.accidents: list[Point] = []
+        self.cameras: list[Point] = []
+        self.potholes: list[Point] = []
+        self.cops: list[Point] = []
+        
+        self.cars: list[Car] = []
+        
+        # CUSTOM ELEMENTS
+        
+        self.path: LineString | None = None
+        self.start: Point | None = None
+        self.goal: Point | None = None
+        self.car: Car | None = None
+        
+        # DISTANCE
         self.distance = 0.0
         
         self.load()
@@ -45,6 +68,10 @@ class Map:
         with open(self.filepath, 'r') as f:
             data = loads(f.read())
         
+        self.load_box(data)
+        self.load_elements(data)
+
+    def load_box(self, data: dict):
         for feature in data['features']:
             geometry_type = feature['geometry']['type']
             geometry_coords = feature['geometry']['coordinates']
@@ -59,95 +86,133 @@ class Map:
             self.min = Vec2.min(self.min, *coords)
             self.max = Vec2.max(self.max, *coords)
         
-        self.delta = self.max - self.min
-        self.aspect_ratio = self.delta / self.delta.y
+        y = (self.min.y + self.max.y) / 2
         
+        west = Vec2(self.min.x, y)
+        east = Vec2(self.max.x, y)
+        
+        self.width = Vec2.haversine(west, east)
+
+    def load_elements(self, data: dict):
         for feature in data['features']:
             properties: dict[str, Any] = feature['properties']
             
             geometry_coords = feature['geometry']['coordinates']
             geometry_type = feature['geometry']['type']
             
+            self.load_points()
+            
             if geometry_type == 'LineString':
-                if properties.get('highway') not in (
-                    'motorway', 'motorway_link', 'trunk', 
-                    'trunk_link', 'primary', 'primary_link',
-                    
-                    'secondary', 'secondary_link', 'tertiary', 
-                    'tertiary_link', 'road',
-                    
-                    'living_street', 'pedestrian', 'unclassified', 
-                    'residential',
-                ):
-                    continue
+                coords = [self.normalize(Vec2(*coord)) for coord in geometry_coords]
+                       
+                self.load_graph(coords)
                 
-                name = properties.get('name', '')
-                coords = [self.normalize(Vec2(*coord)) for coord in geometry_coords]                        
-                
-                if 'road' not in self.line_strings:
-                    self.line_strings['road'] = []
-                
-                self.line_strings['road'].append(LineString(name, coords))
-                
-                # RANDOM POINTS
-                if random() < 0.1:
-                    types = ['hole', 'police', 'accident', 'camera']
-                    
-                    type = choice(types)
-                    name = ['Buraco', 'Polícia', 'Acidente', 'Camera'][types.index(type)]
-                    
-                    if type not in self.points:
-                        self.points[type] = []
-                    
-                    self.points[type].append(Point(name, choice(coords)))
-                
-                # UPDATE GRAPH
-                for prev, curr, next in zip([None] + coords[:-1], coords, coords[1:] + [None]):
-                    if curr not in self.graph:
-                        self.graph[curr] = []
-                    
-                    if prev and prev not in self.graph[curr]:
-                        self.graph[curr].append(prev)
-                
-                    if next and next not in self.graph[curr]:
-                        self.graph[curr].append(next)
+                if self.load_line_string(properties, coords):
+                    self.load_text(properties, coords)
                 
             elif geometry_type == 'Polygon':
-                if properties.get('type') == 'boundary':
-                    continue
-                
-                if properties.get('landuse') in ('forest', 'allotments', 'meadow', 'cemetery', 'grass') or \
-                    properties.get('natural') in ('grassland', 'heath', 'scrub', 'wood', 'wetland') or \
-                    properties.get('leisure') == 'park':
-                    type = 'grass'
-                
-                elif properties.get('leisure') == 'swimming_pool' or properties.get('natural') == 'water':
-                    type = 'water'
-            
-                elif properties.get('building') is not None:
-                    type = 'building'
-                
-                else:
-                    type = 'other'
-                
-                name = properties.get('name', '')
                 coords = [self.normalize(Vec2(*coord)) for coord in geometry_coords[0]]
                 
-                if type not in self.polygons:
-                    self.polygons[type] = []
-                
-                self.polygons[type].append(Polygon(name, coords))
+                if self.load_polygon(properties, coords):
+                    min = Vec2.min(*coords)
+                    max = Vec2.max(*coords)
+                    
+                    y = (min.y + max.y) / 2
+                    
+                    self.load_text(properties, [Vec2(min.x, y), Vec2(max.x, y)])
                 
             else:
                 continue
+
+    def load_graph(self, coords: list[Vec2]):
+        for prev, curr, next in zip([None] + coords[:-1], coords, coords[1:] + [None]):
+            if curr not in self.graph:
+                self.graph[curr] = []
             
-        self.car.pos = list(self.graph.keys())[0]
+            if prev and prev not in self.graph[curr]:
+                self.graph[curr].append(prev)
+        
+            if next and next not in self.graph[curr]:
+                self.graph[curr].append(next)
+
+    def load_line_string(self, properties: dict, coords: list[Vec2]):
+        if properties.get('highway') not in (
+            'motorway', 'motorway_link', 'trunk', 
+            'trunk_link', 'primary', 'primary_link',
+            
+            'secondary', 'secondary_link', 'tertiary', 
+            'tertiary_link', 'road',
+            
+            'living_street', 'pedestrian', 'unclassified', 
+            'residential',
+        ):
+            return False
+        
+        self.roads.append(LineString(self, coords))
+        
+        return True
+
+    def load_polygon(self, properties: dict, coords: list[Vec2]):
+        if properties.get('type') == 'boundary':
+            return False
+        
+        polygon = Polygon(self, coords)
+        
+        if properties.get('landuse') in (
+            'forest', 'allotments', 'meadow', 'grass'
+        ) or properties.get('natural') in (
+            'grassland', 'heath', 'scrub', 'wood', 'wetland'
+        ) or properties.get('leisure') in (
+            'park',
+        ):
+            self.greens.append(polygon)
+        
+        elif properties.get('leisure') in (
+            'swimming_pool',
+        ) or properties.get('natural') in (
+            'water', 
+        ):
+            self.waters.append(polygon)
+    
+        elif properties.get('building'):
+            self.buildings.append(polygon)
+
+        else:
+            self.others.append(polygon)
+
+        return True
+
+    def load_points(self): # TODO
+        ...
+
+    def load_text(self, properties: dict, coords: list[Vec2]):
+        name = properties.get('name', '')
+        
+        if name == '':
+            return
+        
+        self.texts.append(Text(self, name, coords))       
+
+    def transform_km(self, size: float):
+        delta = self.max - self.min
+        aspect_ratio = delta.x / delta.y
+        
+        return size / self.width * aspect_ratio * 2
+
+    def transform_pct(self, size: float):
+        return size * 2
 
     def normalize(self, coord: Vec2):
-        return (((coord - self.min) / self.delta) * 2 - 1) * self.aspect_ratio
+        delta = self.max - self.min
+        aspect_ratio = delta / delta.y
+        
+        return (((coord - self.min) / delta) * 2 - 1) * aspect_ratio
 
-    def original(self, coord: Vec2):
-        return ((coord / self.aspect_ratio + 1) / 2) * self.delta + self.min
+    def denormalize(self, coord: Vec2):
+        delta = self.max - self.min
+        aspect_ratio = delta / delta.y
+        
+        return ((coord / aspect_ratio + 1) / 2) * delta + self.min
       
     def zoom(self, coord: Vec2, direction: float):
         scale = self.scale * (1 + ZOOM_FACTOR) ** direction
@@ -190,7 +255,7 @@ class Map:
             
             coords = [self.normalize(point) for point in path]
             
-            self.line_strings['path'] = [LineString('Percurso', coords)]
+            self.line_strings['path'] = [LineString(self,'Percurso', coords)]
             self.distance = distance
 
             # CHANGE
@@ -198,8 +263,8 @@ class Map:
             self.car.rotate(Vec2.degrees(self.car.j, coords[1] - coords[0]))
 
     def construct_path(self):
-        start = self.original(self.points['start'][0].coord)
-        goal = self.original(self.points['goal'][0].coord)
+        start = self.denormalize(self.points['start'][0].coord)
+        goal = self.denormalize(self.points['goal'][0].coord)
         
         openSet = { start }
 
@@ -223,7 +288,7 @@ class Map:
             openSet.remove(current)
 
             for neighbor in self.graph[self.normalize(current)]:
-                neighbor = self.original(neighbor)
+                neighbor = self.denormalize(neighbor)
                 
                 tentative_gScore = gScore[current] + Vec2.haversine(current, neighbor)
 

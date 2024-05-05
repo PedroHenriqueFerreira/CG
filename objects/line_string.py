@@ -1,93 +1,76 @@
 from OpenGL.GL import *
-
 from math import cos, sin, radians
 
-from settings import LINE_STRING_WIDTH, POINT_SEGMENTS
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from objects.map import Map
+
 from structures.vector import Vec2
 
-from objects.text import Text
-
-def circle():
-    triangles: list[Vec2] = [Vec2(0, 0)]
-    
-    step = 360 / POINT_SEGMENTS
-    
-    for i in range(POINT_SEGMENTS + 1):
-        x = cos(radians(i * step))
-        y = sin(radians(i * step))
-        
-        triangles.append(0.5 * Vec2(x, y))
-
-    return triangles
-
-triangles = circle()
-
-from rgb import random_RGB
+from settings import LINE_STRING_SIZE, LINE_STRING_SEGMENTS
 
 class LineString:
-    def __init__(self, name: str, coords: list[Vec2]):
+    def __init__(self, map: 'Map', coords: list[Vec2]):
+        self.map = map
         self.coords = coords
         
-        self.name = Text(name, 0.02, coords)
-        
+        self.circle: list[Vec2] = []
         self.quads: list[Vec2] = []
-        
-        self.load()
-        
-        self.color = random_RGB()
-        
-    def draw(self):
-        # glColor3f(*self.color)
-        
-        glBegin(GL_QUAD_STRIP)
-        
-        for point in self.quads:
-            glVertex2f(point.x, point.y)
-            
-        glEnd()
-        
-        for coord in [self.coords[0], self.coords[-1]]:
-            glPushMatrix()
-            glTranslatef(coord.x, coord.y, 0)
-            glScalef(LINE_STRING_WIDTH, LINE_STRING_WIDTH, 1)
-            
-            glBegin(GL_TRIANGLE_FAN)
-            
-            for point in triangles:
-                glVertex2f(point.x, point.y)
-                
-            glEnd()
-            
-            glPopMatrix()
 
-    
+        self.loaded = False
+
     def load(self):
-        w = LINE_STRING_WIDTH / 2
+        width = self.map.transform_km(LINE_STRING_SIZE) / 2
 
         for prev, curr, next in zip([None] + self.coords[:-1], self.coords, self.coords[1:] + [None]):
             t0 = Vec2(0, 0) if prev is None else (curr - prev).normalize()
             t1 = Vec2(0, 0) if next is None else (next - curr).normalize()
-            
+
             n0 = Vec2(-t0.y, t0.x)
             n1 = Vec2(-t1.y, t1.x)
-            
+
             if prev is None:
-                self.quads.extend([
-                    curr + n1 * w,
-                    curr - n1 * w,
-                ])
-                 
+                self.quads.extend([curr + n1 * width, curr - n1 * width])
+
             elif next is None:
-                self.quads.extend([
-                    curr + n0 * w,
-                    curr - n0 * w,
-                ])
-            else: 
+                self.quads.extend([curr + n0 * width, curr - n0 * width])
+
+            else:
                 m = (n0 + n1).normalize()
-                    
-                dy = w / Vec2.dot(m, n1)
-                
-                self.quads.extend([
-                    curr + m * dy,
-                    curr - m * dy,
-                ])
+
+                dy = width / Vec2.dot(m, n1)
+
+                self.quads.extend([curr + m * dy, curr - m * dy])
+
+        step = 360 / LINE_STRING_SEGMENTS
+        
+        self.circle.append(Vec2(0, 0))
+        
+        for i in range(LINE_STRING_SEGMENTS + 1):
+            x = cos(radians(i * step))
+            y = sin(radians(i * step))
+            
+            self.circle.append(Vec2(x, y) * width)
+
+        self.loaded = True
+
+    def draw(self):
+        if not self.loaded:
+            self.load()
+
+        glBegin(GL_QUAD_STRIP)
+        for point in self.quads:
+            glVertex2f(point.x, point.y)
+        glEnd()
+
+        for pos in [self.coords[0], self.coords[-1]]:
+            glPushMatrix()
+            
+            glTranslatef(pos.x, pos.y, 0)
+            glBegin(GL_TRIANGLE_FAN)
+            for point in self.circle:
+                glVertex2f(pos.x, pos.y)
+            glEnd()
+            
+            glPopMatrix()

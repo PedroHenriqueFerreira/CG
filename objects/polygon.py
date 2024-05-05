@@ -1,31 +1,21 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from objects.map import Map
+
 from structures.vector import Vec2
-from objects.text import Text
 
 class Polygon:
-    def __init__(self, name: str, coords: list[Vec2]):
+    def __init__(self, map: 'Map',coords: list[Vec2]):
+        self.map = map
         self.coords = coords
-        
-        min = Vec2.min(*coords)
-        max = Vec2.max(*coords)
-        
-        y = (min.y + max.y) / 2
-        
-        self.name = Text(name, 0.035, [Vec2(min.x, y), Vec2(max.x, y)])
         
         self.triangles: list[Vec2] = []
         
-        self.load()
-    
-    def draw(self):
-        glBegin(GL_TRIANGLES)
-        
-        for point in self.triangles:
-            glVertex2f(point.x, point.y)
-            
-        glEnd()
+        self.loaded = False
     
     def load(self):
         if self.is_clockwise(self.coords):
@@ -39,6 +29,19 @@ class Polygon:
                 break
 
             self.triangles.extend(a)
+            
+        self.loaded = True
+
+    def draw(self):
+        if not self.loaded:
+            self.load()
+        
+        glBegin(GL_TRIANGLES)
+        
+        for point in self.triangles:
+            glVertex2f(point.x, point.y)
+            
+        glEnd()
 
     def is_clockwise(self, coord: list[Vec2]):
         sum = (coord[0].x - coord[len(coord) - 1].x) * (coord[0].y + coord[len(coord) - 1].y)

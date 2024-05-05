@@ -4,7 +4,6 @@ from OpenGL.GLUT import *
 
 from settings import *
 
-from structures.matrix import Mat2
 from structures.vector import Vec2
 from objects.map import Map
 from objects.texture import Texture
@@ -12,7 +11,7 @@ from objects.camera import Camera
 
 from playsound import playsound
 
-map = None
+map = Map(MAP_PATH)
 
 window = Vec2(WINDOW_WIDTH, WINDOW_HEIGHT)
 
@@ -30,8 +29,6 @@ def normalize(x: int, y: int):
     return (normalized * aspect_ratio / map.scale) + map.offset
 
 def initializeGL():
-    global map
-
     glClearColor(*BG_COLOR, 1)
 
     glEnable(GL_DEPTH_TEST)
@@ -43,33 +40,15 @@ def initializeGL():
 
     glLineWidth(2)
     glPointSize(3)
-
-    map = Map(MAP_PATH)
     
     for type in POINT_TEXTURE:
         texture[type] = Texture(POINT_TEXTURE[type])
-
-sign = -1
-pulse = 1
 
 cam = Camera()
 
 km = 0
 
-counter = 0
-
 def paintGL():
-    global counter
-    
-    counter += 1
-    
-    global pulse, sign
-    
-    if pulse >= 1.25 or pulse <= 1:
-        sign *= -1
-    
-    pulse += sign * 0.02
-    
     glClear(GL_COLOR_BUFFER_BIT)
 
     glMatrixMode(GL_PROJECTION)
@@ -81,7 +60,7 @@ def paintGL():
 
     camera = None
 
-    if len(map.line_strings.get('path', [])) > 0:
+    if map.car:
         camera = map.car.pos - map.car.j * 0.01
 
         cam.update([
@@ -101,35 +80,41 @@ def paintGL():
         
         gluLookAt(*cam.values)
 
-    # DRAW POLYGONS
-    for type in reversed(POLYGON_COLOR):
-        if type not in map.polygons:
-            continue
+    # DRAW GREENS
+    glColor3f(*GREEN_COLOR)
+    for green in map.greens:
+        green.draw()
 
-        glColor3f(*POLYGON_COLOR[type])
+    # DRAW WATERS
+    glColor3f(*WATER_COLOR)
+    for water in map.waters:
+        water.draw()
 
-        for polygon in map.polygons[type]:
-            polygon.draw()
+    # DRAW OTHERS
+    glColor3f(*OTHER_COLOR)
+    for other in map.others:
+        other.draw()
 
-    # DRAW LINE STRINGS
-    for type in reversed(LINE_STRING_COLOR):
-        if type not in map.line_strings:
-            continue
+    # DRAW BUILDINGS
+    glColor3f(*BUILDING_COLOR)
+    for building in map.buildings:
+        building.draw()
 
-        glColor3f(*LINE_STRING_COLOR[type])
-
-        for line_string in map.line_strings[type]:
-            line_string.draw()
+    # DRAW ROADS
+    glColor3f(*ROAD_COLOR)
+    for road in map.roads:
+        road.draw()
+        
+    # DRAW PATH
+    glColor3f(*PATH_COLOR)
+    if map.path:
+        map.path.draw()
     
-    # DRAW POINTS
-    for type in reversed(POINT_TEXTURE):
-        if type not in map.points:
-            continue
-
-        for point in map.points[type]:
-            point.draw(map.car.rotation, 1, texture[type].id)
-
+    # DRAW TEXTS    
     glColor3f(*TEXT_COLOR)
+    for text in map.texts:
+        text.draw()
+    
     # for type in map.polygons:
     #     for polygon in map.polygons[type]:
     #         polygon.name.draw(map)
@@ -151,14 +136,7 @@ def paintGL():
 
     # DRAW CAR
 
-    for a in map.line_strings['road']:
-        a.name.draw(map)
-    
-    for type in map.polygons:
-        for polygon in map.polygons[type]:
-            polygon.name.draw(map)
-    
-    map.car.draw()
+    # map.car.draw()
     
     glutSwapBuffers()
 
@@ -214,6 +192,10 @@ def timerGL(value: int):
     global pos, i, j
 
     glutTimerFunc(1000 // FPS, timerGL, 0)
+
+    glutPostRedisplay()
+    
+    return
 
     nearest = map.car.pos.nearest(map.graph.keys())
     distance = Vec2.distance(map.car.pos, nearest)
@@ -292,7 +274,7 @@ def timerGL(value: int):
             
             for i in range(index + 1):
                 if i != 0:
-                    a += Vec2.haversine(map.original(path[i]), map.original(path[i - 1]))
+                    a += Vec2.haversine(map.denormalize(path[i]), map.denormalize(path[i - 1]))
             
             km = a
             
