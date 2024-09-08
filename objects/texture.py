@@ -9,7 +9,7 @@ class Texture2D:
     def __init__(
         self, 
         file: str, 
-        filter: Constant = GL_LINEAR, 
+        filter: Constant = GL_LINEAR,
         wrap: Constant = GL_MIRRORED_REPEAT,
         env: Constant = GL_COMBINE
     ):  
@@ -88,13 +88,11 @@ class TextureCubeMap:
         self, 
         files: list[str],
         filter: Constant = GL_LINEAR,
-        wrap: Constant = GL_CLAMP_TO_EDGE,
-        env: Constant = GL_REPLACE
+        wrap: Constant = GL_CLAMP_TO_EDGE
     ):
         self.files = files
         self.filter = filter
         self.wrap = wrap
-        self.env = env
         
         self.id = 0
         
@@ -113,8 +111,6 @@ class TextureCubeMap:
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, self.wrap)
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, self.wrap)
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, self.wrap)
-        
-        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, self.env)
         
         for i, file in enumerate(self.files):
             image = Image.open(file).transpose(Image.FLIP_TOP_BOTTOM)

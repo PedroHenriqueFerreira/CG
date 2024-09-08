@@ -111,6 +111,15 @@ class Map:
         self.textures[PILOT_HOVER_TEXTURE_PATH] = Texture2D(PILOT_HOVER_TEXTURE_PATH)
         self.textures[RECALCULATE_HOVER_TEXTURE_PATH] = Texture2D(RECALCULATE_HOVER_TEXTURE_PATH)
 
+        # BUILDING
+        self.textures[BUILDING_BRICKS_TEXTURE_PATH] = Texture2D(BUILDING_BRICKS_TEXTURE_PATH)
+        self.textures[BUILDING_CONCRETE_TEXTURE_PATH] = Texture2D(BUILDING_CONCRETE_TEXTURE_PATH)
+        self.textures[BUILDING_PAINT_TEXTURE_PATH] = Texture2D(BUILDING_PAINT_TEXTURE_PATH)
+
+        self.textures[WATER_TEXTURE_PATH] = Texture2D(WATER_TEXTURE_PATH)
+        self.textures[GRASS_TEXTURE_PATH] = Texture2D(GRASS_TEXTURE_PATH)
+
+        
     def load_sounds(self):
         self.sounds[FORWARD_SOUND_PATH] = Sound(FORWARD_SOUND_PATH)
         self.sounds[LEFT_SOUND_PATH] = Sound(LEFT_SOUND_PATH)
@@ -266,9 +275,6 @@ class Map:
             else:
                 continue
 
-        order = [GRASS_COLOR, WATER_COLOR, UNKNOWN_COLOR, BUILDING_COLOR]
-        self.polygons.sort(key=lambda polygon: order.index(polygon.color))
-
     def load_graph(self, coords: list[Vec2]):
         for prev, curr, next in zip([None] + coords[:-1], coords, coords[1:] + [None]):
             if curr not in self.graph:
@@ -394,6 +400,12 @@ class Map:
             return False
             
         height = 0
+        
+        texture = self.textures[choice((
+            BUILDING_BRICKS_TEXTURE_PATH, 
+            BUILDING_CONCRETE_TEXTURE_PATH, 
+            BUILDING_PAINT_TEXTURE_PATH,
+        ))]   
 
         if properties.get('landuse') in (
             'forest', 'allotments', 'meadow', 'grass'
@@ -402,25 +414,30 @@ class Map:
         ) or properties.get('leisure') in (
             'park',
         ):
-            color = GRASS_COLOR
+            texture = self.textures[GRASS_TEXTURE_PATH]
+            texture_size = self.km_to_world(0.1)
+            height = 1e-6
 
         elif properties.get('leisure') in (
             'swimming_pool',
         ) or properties.get('natural') in (
             'water',
         ):
-            color = WATER_COLOR
+            texture = self.textures[WATER_TEXTURE_PATH]
+            texture_size = 0.08
+            height = 1e-5
 
         elif properties.get('building'):
             color = BUILDING_COLOR
-            height = float(properties.get('height', 3))
+            texture_size = self.km_to_world(0.01)
+            height = self.km_to_world(0.001) * float(properties.get('height', '3'))
 
         else:
-            color = UNKNOWN_COLOR
+            color = UNKNOWN_COLOR  
+            texture_size = self.km_to_world(0.001)
+            height = 1e-6  
 
-        self.polygons.append(
-            Polygon(self, coords, height, color)
-        )
+        self.polygons.append(Polygon(coords, height, texture, texture_size))
 
         return True
 

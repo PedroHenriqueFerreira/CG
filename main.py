@@ -6,7 +6,7 @@ from settings import *
 
 from objects.skybox import SkyBox
 
-from structures.vector import Vec2
+from structures.vector import Vec2, Vec3
 from objects.map import Map
 
 from objects.texture import Texture2D
@@ -69,9 +69,7 @@ skybox = SkyBox([
     'textures/skybox/bottom.png', 
 ])
 
-ground_texture = Texture2D('textures/ground_.jpg')
-
-polygon_texture = Texture2D('textures/building.jpg')
+ground_texture = Texture2D('textures/ground.jpg')
 
 asphalt_texture = Texture2D('textures/asphalt.jpg')
 
@@ -103,8 +101,15 @@ def paintGL():
             0, 1, 0
         )
     
-    glLightfv(GL_LIGHT0, GL_POSITION, (100, 100, 100))
-    glLightfv(GL_LIGHT0, GL_AMBIENT, (0.1, 0.1, 0.1))
+    camera_pos =Vec3(*map.camera.values[:3])
+    
+    glPushMatrix()
+    glTranslatef(camera_pos.x, camera_pos.y, camera_pos.z)
+    skybox.draw()
+    glPopMatrix()
+    
+    glLightfv(GL_LIGHT0, GL_POSITION, (1, 1, 1))
+    glLightfv(GL_LIGHT0, GL_AMBIENT, (0.25, 0.25, 0.25))
     glLightfv(GL_LIGHT0, GL_DIFFUSE, (0.5, 0.5, 0.5))
     glLightfv(GL_LIGHT0, GL_SPECULAR, (1, 1, 1))
     
@@ -112,8 +117,6 @@ def paintGL():
     # glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, (1, 1, 1))
     # glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, (1, 1, 1))
     # glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 5.0)
-    
-    skybox.draw()
 
 
     # DRAW GROUND
@@ -123,25 +126,26 @@ def paintGL():
     
     glBegin(GL_QUADS)
     
-    glTexCoord2f(0, 0)
-    glVertex3f(-2, -2, 0)
+    glTexCoord2f(-30, -30)
+    glVertex3f(-1, -1, 0)
     
-    glTexCoord2f(2, 0)
-    glVertex3f(2, -2, 0)
+    glTexCoord2f(30, -30)
+    glVertex3f(1, -1, 0)
     
-    glTexCoord2f(2, 2)
-    glVertex3f(2, 2, 0)
+    glTexCoord2f(30, 30)
+    glVertex3f(1, 1, 0)
 
-    glTexCoord2f(0, 2)
-    glVertex3f(-2, 2, 0)
+    glTexCoord2f(-30, 30)
+    glVertex3f(-1, 1, 0)
 
     glEnd()
 
     glBindTexture(GL_TEXTURE_2D, 0)
 
+
     # DRAW POLYGONS
     for polygon in map.polygons:
-        polygon.draw(polygon_texture)
+        polygon.draw()
 
     # DRAW LINE_STRINGS
     for line_string in map.line_strings:

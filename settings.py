@@ -89,6 +89,13 @@ CANCEL_POS = Vec2(0.8, 0.9)
 
 # TEXTURES
 
+BUILDING_BRICKS_TEXTURE_PATH = 'textures/polygon/building_bricks.jpg'
+BUILDING_CONCRETE_TEXTURE_PATH = 'textures/polygon/building_concrete.jpg'
+BUILDING_PAINT_TEXTURE_PATH = 'textures/polygon/building_paint.jpg'
+
+WATER_TEXTURE_PATH = 'textures/water.jpg'
+GRASS_TEXTURE_PATH = 'textures/grass.jpg'
+
 ORIGIN_TEXTURE_PATH = 'textures/point/origin.png'
 DESTINY_TEXTURE_PATH = 'textures/point/destiny.png'
 

@@ -10,22 +10,16 @@ if TYPE_CHECKING:
 
 from structures.vector import Vec2
 
-from objects.color import Color
-
 class Polygon:
-    def __init__(self, map: 'Map', coords: list[Vec2], height: float, color: Color):
-        self.map = map
+    def __init__(self, coords: list[Vec2], height: float, texture: Texture2D, texture_size: float):
         self.coords = coords
         self.height = height
-        self.color = color
+        self.texture = texture
+        self.texture_size = texture_size
         
         self.triangles: list[Vec2] = []
         
-        self.loaded = False
-        
         self.gl_list = 0
-        
-        self.meter = self.map.km_to_world(0.001)
     
     def load(self):
         if len(self.triangles) > 0:
@@ -43,84 +37,51 @@ class Polygon:
 
             self.triangles.extend(a)
 
-    def draw(self, texture: Texture2D):
-        self.load()
-            
-        texture.load()
-            
+    def draw(self):    
         if self.gl_list > 0:
-            glCallList(self.gl_list)
-        else:
-            self.gl_list = glGenLists(1)
+            return glCallList(self.gl_list)
         
-            glNewList(self.gl_list, GL_COMPILE)
-            
-            glColor3f(self.color.r, self.color.g, self.color.b)
-            
-            glBindTexture(GL_TEXTURE_2D, texture.id)
-            glBegin(GL_TRIANGLES)
-            
-            min_ = Vec2.min(*self.triangles)
-            max_ = Vec2.max(*self.triangles)
-            width_ = max_.x - min_.x
-            height_ = max_.y - min_.y
-            
-            glNormal3f(0, 0, 1)
-            
-            for point in self.triangles:
-                x_ = (point.x - min_.x) / width_
-                y_ = (point.y - min_.y) / height_
-                
-                glTexCoord2f(x_, y_)
-                glVertex3f(point.x, point.y, self.meter * self.height)
-                
-            glEnd()
-            
-            if self.height == 0:
-                glBindTexture(GL_TEXTURE_2D, 0)
-                glEndList()
-                return
-            
+        self.load()
+        self.texture.load()
+        
+        self.gl_list = glGenLists(1)
+        glNewList(self.gl_list, GL_COMPILE)
+        glBindTexture(GL_TEXTURE_2D, self.texture.id)
+        
+        glColor3f(1, 1, 1)
+        glBegin(GL_TRIANGLES)
+        
+        glNormal3f(0, 0, 1)
+        for point in self.triangles:
+            glTexCoord2f(point.x / self.texture_size, point.y / self.texture_size)
+            glVertex3f(point.x, point.y, self.height)
+        
+        glEnd()
+        
+        if self.height > 0:
             glBegin(GL_QUADS)
             
             for prev, curr in zip(self.coords[:-1], self.coords[1:]):
-                dist = Vec2.distance(curr, prev)
-                height = self.meter * self.height
+                vector = curr - prev
                 
-                width_is_max = dist > height
+                normal = vector.normalize()
+                length = vector.length()
                 
-                d = (curr - prev).normalize()
+                glNormal3f(-normal.y, normal.x, 0)
                 
-                glNormal3f(-d.y, d.x, 0)
-                
-                if width_is_max:
-                    p = height / dist
-                    
-                    glTexCoord2f(0, 0)
-                    glVertex3f(prev.x, prev.y, 0)
-                    glTexCoord2f(1, 0)
-                    glVertex3f(curr.x, curr.y, 0)
-                    glTexCoord2f(1, p)
-                    glVertex3f(curr.x, curr.y, height)
-                    glTexCoord2f(0, p)
-                    glVertex3f(prev.x, prev.y, height)
-                else:
-                    p = dist / height
-                    
-                    glTexCoord2f(0, 0)
-                    glVertex3f(prev.x, prev.y, 0)
-                    glTexCoord2f(p, 0)
-                    glVertex3f(curr.x, curr.y, 0)
-                    glTexCoord2f(p, 1)
-                    glVertex3f(curr.x, curr.y, height)
-                    glTexCoord2f(0, 1)
-                    glVertex3f(prev.x, prev.y, height)
+                glTexCoord2f(0, 0)
+                glVertex3f(prev.x, prev.y, 0)
+                glTexCoord2f(length / self.texture_size, 0)
+                glVertex3f(curr.x, curr.y, 0)
+                glTexCoord2f(length / self.texture_size, self.height / self.texture_size)
+                glVertex3f(curr.x, curr.y, self.height)
+                glTexCoord2f(0, self.height / self.texture_size)
+                glVertex3f(prev.x, prev.y, self.height)
+            
             glEnd()
-            
-            glBindTexture(GL_TEXTURE_2D, 0)
-            
-            
-            glEndList()            
+
+        glBindTexture(GL_TEXTURE_2D, 0)
+        glEndList()            
 
     def get_ear(self, coord: list[Vec2]):
         size = len(coord)
