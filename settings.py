@@ -96,6 +96,8 @@ BUILDING_PAINT_TEXTURE_PATH = 'textures/polygon/building_paint.jpg'
 WATER_TEXTURE_PATH = 'textures/water.jpg'
 GRASS_TEXTURE_PATH = 'textures/grass.jpg'
 
+ASPHALT_TEXTURE_PATH = 'textures/asphalt.jpg'
+
 ORIGIN_TEXTURE_PATH = 'textures/point/origin.png'
 DESTINY_TEXTURE_PATH = 'textures/point/destiny.png'
 

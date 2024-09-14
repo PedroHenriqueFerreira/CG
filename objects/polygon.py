@@ -1,24 +1,26 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 
-from typing import TYPE_CHECKING
-
 from objects.texture import Texture2D
-
-if TYPE_CHECKING:
-    from objects.map import Map
-
+from objects.color import Color
 from structures.vector import Vec2
 
 class Polygon:
-    def __init__(self, coords: list[Vec2], height: float, texture: Texture2D, texture_size: float):
+    def __init__(
+        self,
+        coords: list[Vec2],
+        height: float,
+        color: Color,
+        texture: Texture2D, 
+        texture_size: float
+    ):
         self.coords = coords
         self.height = height
+        self.color = color
         self.texture = texture
         self.texture_size = texture_size
         
         self.triangles: list[Vec2] = []
-        
         self.gl_list = 0
     
     def load(self):
@@ -48,37 +50,38 @@ class Polygon:
         glNewList(self.gl_list, GL_COMPILE)
         glBindTexture(GL_TEXTURE_2D, self.texture.id)
         
-        glColor3f(1, 1, 1)
+        glColor3f(self.color.r, self.color.g, self.color.b)
+        
         glBegin(GL_TRIANGLES)
         
         glNormal3f(0, 0, 1)
+        
         for point in self.triangles:
             glTexCoord2f(point.x / self.texture_size, point.y / self.texture_size)
             glVertex3f(point.x, point.y, self.height)
         
         glEnd()
         
-        if self.height > 0:
-            glBegin(GL_QUADS)
+        glBegin(GL_QUADS)
+        
+        for prev, curr in zip(self.coords[:-1], self.coords[1:]):
+            vector = curr - prev
             
-            for prev, curr in zip(self.coords[:-1], self.coords[1:]):
-                vector = curr - prev
-                
-                normal = vector.normalize()
-                length = vector.length()
-                
-                glNormal3f(-normal.y, normal.x, 0)
-                
-                glTexCoord2f(0, 0)
-                glVertex3f(prev.x, prev.y, 0)
-                glTexCoord2f(length / self.texture_size, 0)
-                glVertex3f(curr.x, curr.y, 0)
-                glTexCoord2f(length / self.texture_size, self.height / self.texture_size)
-                glVertex3f(curr.x, curr.y, self.height)
-                glTexCoord2f(0, self.height / self.texture_size)
-                glVertex3f(prev.x, prev.y, self.height)
+            normal = vector.normalize()
+            length = vector.length()
             
-            glEnd()
+            glNormal3f(-normal.y, normal.x, 0)
+            
+            glTexCoord2f(0, 0)
+            glVertex3f(prev.x, prev.y, 0)
+            glTexCoord2f(length / self.texture_size, 0)
+            glVertex3f(curr.x, curr.y, 0)
+            glTexCoord2f(length / self.texture_size, self.height / self.texture_size)
+            glVertex3f(curr.x, curr.y, self.height)
+            glTexCoord2f(0, self.height / self.texture_size)
+            glVertex3f(prev.x, prev.y, self.height)
+        
+        glEnd()
 
         glBindTexture(GL_TEXTURE_2D, 0)
         glEndList()            

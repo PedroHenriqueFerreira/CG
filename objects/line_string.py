@@ -1,39 +1,45 @@
 from OpenGL.GL import *
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from objects.map import Map
-
 from objects.circle import Circle
-
 from objects.color import Color
+from objects.texture import Texture2D
 
 from structures.vector import Vec2
 
-
 class LineString:
-    def __init__(self, map: 'Map', coords: list[Vec2], color: Color, size: float):
-        self.map = map
+    def __init__(
+        self, 
+        coords: list[Vec2], 
+        height: float,
+        color: Color, 
+        size: float,
+        texture: Texture2D,
+        texture_size: float
+    ):
         self.coords = coords
-        self.size = size
+        self.height = height
         self.color = color
+        self.size = size
+        self.texture = texture
+        self.texture_size = texture_size
 
         self.circles: list[Circle] = []
         self.quads: list[Vec2] = []
-
-        self.loaded = False
         self.gl_list = 0
 
     def load(self):
-        self.size = self.map.km_to_world(self.size)
+        if len(self.quads) > 0:
+            return
 
         self.circles.append(Circle(self.coords[0], self.size))
         self.circles.append(Circle(self.coords[-1], self.size))
 
         size = self.size / 2
-
-        for prev, curr, next in zip([None] + self.coords[:-1], self.coords, self.coords[1:] + [None]):
+        
+        prev_coords = [None] + self.coords[:-1]
+        next_coords = self.coords[1:] + [None]
+        
+        for prev, curr, next in zip(prev_coords, self.coords, next_coords):
             t0 = Vec2(0, 0) if prev is None else (curr - prev).normalize()
             t1 = Vec2(0, 0) if next is None else (next - curr).normalize()
 
@@ -53,40 +59,37 @@ class LineString:
 
                 self.quads.extend([curr + m * dy, curr - m * dy])
 
-        self.loaded = True
-
-    def draw(self, texture = None):
-        if not self.loaded:
-            self.load()
-
+    def draw(self):
         if self.gl_list > 0:
-            glCallList(self.gl_list)
-        else:
-            self.gl_list = glGenLists(1)
-            
-            glNewList(self.gl_list, GL_COMPILE)
+            return glCallList(self.gl_list)
+        
+        self.load()
+        self.texture.load()
 
-            glColor3f(self.color.r, self.color.g, self.color.b)
+        self.gl_list = glGenLists(1)
+        glNewList(self.gl_list, GL_COMPILE)
+        glBindTexture(GL_TEXTURE_2D, self.texture.id)
 
-            if texture:
-                glBindTexture(GL_TEXTURE_2D, texture.id)
+        glColor3f(self.color.r, self.color.g, self.color.b)
 
-            glBegin(GL_QUAD_STRIP)
+        glBegin(GL_QUAD_STRIP)
+        
+        glNormal3f(0, 0, 1)
+        
+        for pos in self.quads:
+            glTexCoord2f(pos.x / self.texture_size, pos.y / self.texture_size)
+            glVertex3f(pos.x, pos.y, self.height)
+        
+        glEnd()
+        
+        glPushMatrix()
+        
+        glTranslatef(0, 0, -self.height)
+        
+        for circle in self.circles:
+            circle.draw()
             
-            glNormal3f(0, 0, 1)
-            
-            for pos in self.quads:
-                glVertex3f(pos.x, pos.y, 1e-5)
-            
-            glEnd()
-            
-            if texture:
-                glBindTexture(GL_TEXTURE_2D, 0)
-            
-            for circle in self.circles:
-                circle.draw()
+        glPopMatrix()
 
-            glEndList()
-            
-    def free(self):
-        glDeleteLists([self.gl_list])
+        glBindTexture(GL_TEXTURE_2D, 0)
+        glEndList()

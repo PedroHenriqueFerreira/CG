@@ -119,6 +119,7 @@ class Map:
         self.textures[WATER_TEXTURE_PATH] = Texture2D(WATER_TEXTURE_PATH)
         self.textures[GRASS_TEXTURE_PATH] = Texture2D(GRASS_TEXTURE_PATH)
 
+        self.textures[ASPHALT_TEXTURE_PATH] = Texture2D(ASPHALT_TEXTURE_PATH)
         
     def load_sounds(self):
         self.sounds[FORWARD_SOUND_PATH] = Sound(FORWARD_SOUND_PATH)
@@ -387,25 +388,19 @@ class Map:
 
         self.line_strings.append(
             LineString(
-                self,
                 coords,
+                0.0001,
                 LINE_STRING_COLOR,
-                LINE_STRING_SIZE
+                self.km_to_world(LINE_STRING_SIZE),
+                self.textures[ASPHALT_TEXTURE_PATH],    
+                self.km_to_world(0.05)
             ))
 
         return True
 
     def load_polygon(self, properties: dict, coords: list[Vec2]):
-        if properties.get('type') == 'boundary':
+        if properties.get('type') in ('boundary', ):
             return False
-            
-        height = 0
-        
-        texture = self.textures[choice((
-            BUILDING_BRICKS_TEXTURE_PATH, 
-            BUILDING_CONCRETE_TEXTURE_PATH, 
-            BUILDING_PAINT_TEXTURE_PATH,
-        ))]   
 
         if properties.get('landuse') in (
             'forest', 'allotments', 'meadow', 'grass'
@@ -415,8 +410,9 @@ class Map:
             'park',
         ):
             texture = self.textures[GRASS_TEXTURE_PATH]
-            texture_size = self.km_to_world(0.1)
-            height = 1e-6
+            texture_size = self.km_to_world(0.01)
+            height = 0.0002
+            color = GRASS_COLOR
 
         elif properties.get('leisure') in (
             'swimming_pool',
@@ -424,20 +420,27 @@ class Map:
             'water',
         ):
             texture = self.textures[WATER_TEXTURE_PATH]
-            texture_size = 0.08
-            height = 1e-5
+            texture_size = self.km_to_world(0.1)
+            height = 0.0004
+            color = WATER_COLOR
 
         elif properties.get('building'):
-            color = BUILDING_COLOR
+            texture = self.textures[choice((
+                BUILDING_BRICKS_TEXTURE_PATH, 
+                BUILDING_CONCRETE_TEXTURE_PATH, 
+                BUILDING_PAINT_TEXTURE_PATH,
+            ))]
             texture_size = self.km_to_world(0.01)
             height = self.km_to_world(0.001) * float(properties.get('height', '3'))
+            color = BUILDING_COLOR
 
         else:
-            color = UNKNOWN_COLOR  
-            texture_size = self.km_to_world(0.001)
-            height = 1e-6  
+            texture = self.textures[BUILDING_CONCRETE_TEXTURE_PATH]
+            texture_size = self.km_to_world(0.01)
+            height = 0.0003
+            color = UNKNOWN_COLOR
 
-        self.polygons.append(Polygon(coords, height, texture, texture_size))
+        self.polygons.append(Polygon(coords, height, color, texture, texture_size))
 
         return True
 
@@ -582,7 +585,14 @@ class Map:
 
                 self.my_car.rotate(Vec2.angle(self.my_car.j, coords[1] - coords[0]))
                 
-                self.path = LineString(self, coords, PATH_COLOR, PATH_SIZE)
+                self.path = LineString(
+                    coords, 
+                    0.0002, 
+                    PATH_COLOR, 
+                    self.km_to_world(PATH_SIZE),
+                    self.textures[ASPHALT_TEXTURE_PATH],
+                    self.km_to_world(0.01)
+                )
                 self.distance = gScore[destiny]
 
                 return

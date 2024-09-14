@@ -12,22 +12,19 @@ class Circle:
         self.pos = pos
         self.size = size
         
-        self.loaded = False
-        
     def load(self):
-        if len(circle) == 0:
-            step = 360 / CIRCLE_SEGMENTS
-            vec = Vec2(0.5, 0)
-            
-            circle.append(Vec2(0, 0))
-            for i in range(CIRCLE_SEGMENTS + 1):
-                circle.append(Mat2.rotation(i * step) * vec)
-                
-        self.loaded = True
+        if len(circle) > 0:
+            return
+        
+        step = 360 / CIRCLE_SEGMENTS
+        
+        circle.append(Vec2(0, 0))
+        
+        for i in range(CIRCLE_SEGMENTS + 1):
+            circle.append(Mat2.rotation(i * step) * Vec2(0.5, 0))
             
     def draw(self):
-        if not self.loaded:
-            self.load()
+        self.load()
         
         glPushMatrix()
         
@@ -37,7 +34,6 @@ class Circle:
         glBegin(GL_TRIANGLE_FAN)
         
         glNormal3f(0, 0, 1)
-        
         for pos in circle:
             glVertex3f(pos.x, pos.y, 0)
         

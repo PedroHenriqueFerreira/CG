@@ -71,8 +71,6 @@ skybox = SkyBox([
 
 ground_texture = Texture2D('textures/ground.jpg')
 
-asphalt_texture = Texture2D('textures/asphalt.jpg')
-
 def paintGL():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
@@ -118,7 +116,6 @@ def paintGL():
     # glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, (1, 1, 1))
     # glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 5.0)
 
-
     # DRAW GROUND
     ground_texture.load()
     
@@ -126,16 +123,16 @@ def paintGL():
     
     glBegin(GL_QUADS)
     
-    glTexCoord2f(-30, -30)
+    glTexCoord2f(-50, -50)
     glVertex3f(-1, -1, 0)
     
-    glTexCoord2f(30, -30)
+    glTexCoord2f(50, -50)
     glVertex3f(1, -1, 0)
     
-    glTexCoord2f(30, 30)
+    glTexCoord2f(50, 50)
     glVertex3f(1, 1, 0)
 
-    glTexCoord2f(-30, 30)
+    glTexCoord2f(-50, 50)
     glVertex3f(-1, 1, 0)
 
     glEnd()
@@ -149,7 +146,7 @@ def paintGL():
 
     # DRAW LINE_STRINGS
     for line_string in map.line_strings:
-        line_string.draw(asphalt_texture)
+        line_string.draw()
 
     if map.path:
         map.path.draw()
