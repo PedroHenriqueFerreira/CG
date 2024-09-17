@@ -101,10 +101,10 @@ def paintGL():
     
     camera_pos =Vec3(*map.camera.values[:3])
     
-    glPushMatrix()
-    glTranslatef(camera_pos.x, camera_pos.y, camera_pos.z)
+    # glPushMatrix()
+    # glTranslatef(camera_pos.x, camera_pos.y, camera_pos.z)
     skybox.draw()
-    glPopMatrix()
+    # glPopMatrix()
     
     glLightfv(GL_LIGHT0, GL_POSITION, (1, 1, 1))
     glLightfv(GL_LIGHT0, GL_AMBIENT, (0.25, 0.25, 0.25))

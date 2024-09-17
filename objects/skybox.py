@@ -35,86 +35,86 @@ class SkyBox:
         # BOTTOM
         
         glTexCoord3f(-1, 1, -1)
-        glVertex3f(-1, 1, -1)
+        glVertex3f(-100, 100, -100)
         
         glTexCoord3f(-1, -1, -1)
-        glVertex3f(-1, -1, -1)
+        glVertex3f(-100, -100, -100)
         
         glTexCoord3f(1, -1, -1)
-        glVertex3f(1, -1, -1)
+        glVertex3f(100, -100, -100)
         
         glTexCoord3f(1, 1, -1)
-        glVertex3f(1, 1, -1)
+        glVertex3f(100, 100, -100)
         
         # LEFT
         
         glTexCoord3f(-1, -1,  1)
-        glVertex3f(-1, -1, 1)
+        glVertex3f(-100, -100, 100)
         
         glTexCoord3f(-1, -1, -1)
-        glVertex3f(-1, -1, -1)
+        glVertex3f(-100, -100, -100)
         
         glTexCoord3f(-1, 1, -1)
-        glVertex3f(-1, 1, -1)
+        glVertex3f(-100, 100, -100)
         
         glTexCoord3f(-1,  1,  1)
-        glVertex3f(-1, 1, 1)
+        glVertex3f(-100, 100, 100)
         
         # RIGHT
         
         glTexCoord3f(1, -1, -1)
-        glVertex3f(1, -1, -1)
+        glVertex3f(100, -100, -100)
         
         glTexCoord3f(1, -1,  1)
-        glVertex3f(1, -1,  1)
+        glVertex3f(100, -100,  100)
         
         glTexCoord3f(1,  1,  1)
-        glVertex3f(1,  1, 1)
+        glVertex3f(100,  100, 100)
         
         glTexCoord3f(1,  1, -1)
-        glVertex3f(1, 1, -1)
+        glVertex3f(100, 100, -100)
         
         # TOP
         
         glTexCoord3f(-1, -1,  1)
-        glVertex3f(-1, -1, 1)
+        glVertex3f(-100, -100, 100)
         
         glTexCoord3f(-1,  1,  1)
-        glVertex3f(-1, 1, 1)
+        glVertex3f(-100, 100, 100)
         
         glTexCoord3f(1,  1,  1)
-        glVertex3f(1, 1, 1)
+        glVertex3f(100, 100, 100)
                 
         glTexCoord3f(1, -1,  1)
-        glVertex3f(1, -1, 1)
+        glVertex3f(100, -100, 100)
         
         # FRONT
         
         glTexCoord3f(-1, 1, -1)
-        glVertex3f(-1, 1, -1)
+        glVertex3f(-100, 100, -100)
         
         glTexCoord3f(1,  1, -1)
-        glVertex3f(1, 1, -1)
+        glVertex3f(100, 100, -100)
         
         glTexCoord3f(1,  1,  1)
-        glVertex3f(1, 1, 1)
+        glVertex3f(100, 100, 100)
         
         glTexCoord3f(-1,  1,  1)
-        glVertex3f(-1, 1, 1)
+        glVertex3f(-100, 100, 100)
         
         # BACK
         
         glTexCoord3f(-1, -1, -1)
-        glVertex3f(-1, -1, -1)
+        glVertex3f(-100, -100, -100)
         
         glTexCoord3f(-1, -1,  1)
-        glVertex3f(-1, -1, 1)
+        glVertex3f(-100, -100, 100)
         
         glTexCoord3f(1, -1, 1)
-        glVertex3f(1, -1, 1)
+        glVertex3f(100, -100, 100)
         
         glTexCoord3f(1, -1, -1)
-        glVertex3f(1, -1, -1) 
+        glVertex3f(100, -100, -100) 
         
         glEnd()
         

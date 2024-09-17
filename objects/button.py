@@ -68,6 +68,26 @@ class Button:
         if self.hovered:
             self.hover_texture.draw()
         else:
-            self.texture.draw()
+            self.texture.load()
+            
+            glBindTexture(GL_TEXTURE_2D, self.texture.id)
+        
+            glBegin(GL_QUADS)
+            
+            glTexCoord2f(0, 0)
+            glVertex3f(-0.5, -0.5, 0)
+            
+            glTexCoord2f(1, 0)
+            glVertex3f(0.5, -0.5, 0)
+            
+            glTexCoord2f(1, 1)
+            glVertex3f(0.5, 0.5, 0)
+            
+            glTexCoord2f(0, 1)
+            glVertex3f(-0.5, 0.5, 0)
+            
+            glEnd()
+            
+            glBindTexture(GL_TEXTURE_2D, 0)
 
         glPopMatrix()

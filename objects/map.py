@@ -27,7 +27,7 @@ class Map:
         self.min = Vec2(float('inf'), float('inf'))
         self.max = Vec2(float('-inf'), float('-inf'))
         
-        self.width = 0.0
+        self.size = 0.0
 
         # VIEW
         self.scale = 1.0
@@ -120,6 +120,8 @@ class Map:
         self.textures[GRASS_TEXTURE_PATH] = Texture2D(GRASS_TEXTURE_PATH)
 
         self.textures[ASPHALT_TEXTURE_PATH] = Texture2D(ASPHALT_TEXTURE_PATH)
+        
+        self.textures[SELECTED_TEXTURE_PATH] = Texture2D(SELECTED_TEXTURE_PATH)
         
     def load_sounds(self):
         self.sounds[FORWARD_SOUND_PATH] = Sound(FORWARD_SOUND_PATH)
@@ -245,7 +247,7 @@ class Map:
 
         west, east = Vec2(self.min.x, y), Vec2(self.max.x, y)
 
-        self.width = Vec2.haversine(west, east)
+        self.size = Vec2.haversine(west, east)
 
     def load_elements(self, data: dict):
         for feature in data['features']:
@@ -496,13 +498,10 @@ class Map:
         delta: Vec2 = self.max - self.min
         aspect_ratio = delta.x / delta.y
 
-        return km / self.width * aspect_ratio * 2
+        return km / self.size * aspect_ratio * 2
 
     def percent_to_world(self, percent: float):
         return percent * 2
-
-    def percent_to_rotation(self, percent: float):
-        return percent * 360
 
     def pos_to_screen(self, pos: Vec2):
         return Vec2(2 * pos.x - 1, 1 - 2 * pos.y)
@@ -523,6 +522,8 @@ class Map:
         scale = self.scale * ZOOM_FACTOR ** direction
 
         self.offset += (coord - self.offset) * (1 - (self.scale / scale))
+
+        print(scale)
 
         self.scale = scale
 
@@ -590,7 +591,7 @@ class Map:
                     0.0002, 
                     PATH_COLOR, 
                     self.km_to_world(PATH_SIZE),
-                    self.textures[ASPHALT_TEXTURE_PATH],
+                    self.textures[SELECTED_TEXTURE_PATH],
                     self.km_to_world(0.01)
                 )
                 self.distance = gScore[destiny]

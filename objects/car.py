@@ -73,7 +73,6 @@ class Car:
 
         self.forward_size = self.map.km_to_world(self.forward_size)
         self.backward_size = self.map.km_to_world(self.backward_size)
-        self.rotation_size = self.map.percent_to_rotation(self.rotation_size)
 
         self.loaded = True
 
@@ -292,15 +291,33 @@ class Car:
         glScalef(size, size, size)
 
         if texture == self.circle_texture:
-            texture.draw()
+            texture.load()
+            glBindTexture(GL_TEXTURE_2D, texture.id)
+        
+            glBegin(GL_QUADS)
+            
+            glTexCoord2f(0, 0)
+            glVertex3f(-0.5, -0.5, 0)
+            
+            glTexCoord2f(1, 0)
+            glVertex3f(0.5, -0.5, 0)
+            
+            glTexCoord2f(1, 1)
+            glVertex3f(0.5, 0.5, 0)
+            
+            glTexCoord2f(0, 1)
+            glVertex3f(-0.5, 0.5, 0)
+            
+            glEnd()
+            
+            glBindTexture(GL_TEXTURE_2D, 0)
         else:
             
             glRotatef(180, 0, 0, 1)
             glRotatef(90, 1, 0, 0)
             
             self.obj.draw()
-            
-        # texture.draw()
+        
 
         glPopMatrix()
 

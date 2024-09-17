@@ -5,15 +5,18 @@ from structures.vector import Vec3, Vec2
 
 class Texture2D:
     ''' Represents a 2D texture. '''
-    
+
     def __init__(
         self, 
         file: str, 
+        size: float = 1,
         filter: Constant = GL_LINEAR,
         wrap: Constant = GL_MIRRORED_REPEAT,
-        env: Constant = GL_COMBINE
+        env: Constant = GL_COMBINE,
     ):  
         self.file = file
+        self.size = size
+        
         self.filter = filter
         self.wrap = wrap
         self.env = env
@@ -56,41 +59,19 @@ class Texture2D:
         
         glBindTexture(GL_TEXTURE_2D, 0)
 
-    def draw(self):
-        ''' Draws the texture. '''
-        
-        self.load()
-        
-        glBindTexture(GL_TEXTURE_2D, self.id)
-        
-        glBegin(GL_QUADS)
-        
-        glTexCoord2f(0, 0)
-        glVertex3f(-0.5, -0.5, 0)
-        
-        glTexCoord2f(1, 0)
-        glVertex3f(0.5, -0.5, 0)
-        
-        glTexCoord2f(1, 1)
-        glVertex3f(0.5, 0.5, 0)
-        
-        glTexCoord2f(0, 1)
-        glVertex3f(-0.5, 0.5, 0)
-        
-        glEnd()
-        
-        glBindTexture(GL_TEXTURE_2D, 0)
-
 class TextureCubeMap:
     ''' Represents a cube texture. '''
     
     def __init__(
         self, 
         files: list[str],
+        size: float = 1,
         filter: Constant = GL_LINEAR,
-        wrap: Constant = GL_CLAMP_TO_EDGE
+        wrap: Constant = GL_CLAMP_TO_EDGE,
     ):
         self.files = files
+        self.size = size
+        
         self.filter = filter
         self.wrap = wrap
         
