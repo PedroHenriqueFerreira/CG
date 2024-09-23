@@ -1,17 +1,16 @@
 from OpenGL.GL import *
 
 from objects.circle import Circle
-from objects.color import Color
 from objects.texture import Texture2D
 
-from structures.vector import Vec2
+from structures.vector import Vec2, Vec3
 
 class LineString:
     def __init__(
         self, 
         coords: list[Vec2], 
         height: float,
-        color: Color, 
+        color: Vec3, 
         size: float,
         texture: Texture2D,
         texture_size: float
@@ -70,7 +69,7 @@ class LineString:
         glNewList(self.gl_list, GL_COMPILE)
         glBindTexture(GL_TEXTURE_2D, self.texture.id)
 
-        glColor3f(self.color.r, self.color.g, self.color.b)
+        glColor3f(self.color.x, self.color.y, self.color.z)
 
         glBegin(GL_QUAD_STRIP)
         

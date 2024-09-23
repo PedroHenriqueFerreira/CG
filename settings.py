@@ -1,10 +1,15 @@
-from structures.vector import Vec2
-from objects.color import Color
+import glm
+
+from structures.vector import Vec2, Vec3
 
 from objects.texture import Texture2D
 
+from objects.light import Light
+from objects.camera import Camera, Projection
+from objects.shader import Shader
+
 # GENERAL
-BG_COLOR = Color.hex('#555A60')
+BG_COLOR = Vec3.from_hex('#555A60')
 
 WINDOW_WIDTH = 800 # IN PIXELS
 WINDOW_HEIGHT = 800 # IN PIXELS
@@ -17,34 +22,34 @@ CIRCLE_SEGMENTS = 30 # IN INTEGER
 
 # LINE STRINGS 
 LINE_STRING_SIZE = 0.006 # IN KILOMETERS
-LINE_STRING_COLOR = Color.hex('#363D44')
+LINE_STRING_COLOR = Vec3.from_hex('#363D44')
 
 LINE_STRING_TEXT_THICKNESS = 2 # IN INTEGER
 LINE_STRING_TEXT_SIZE = 0.015 # IN PERCENTAGE
 LINE_STRING_TEXT_MIN_SIZE = 0.002 # IN KILOMETERS
 LINE_STRING_TEXT_MAX_SIZE = 0.012 # IN KILOMETERS
-LINE_STRING_TEXT_COLOR = Color.hex('#AAAAAA')
+LINE_STRING_TEXT_COLOR = Vec3.from_hex('#AAAAAA')
 
 PATH_SIZE = 0.006 # IN KILOMETERS
 # PATH_COLOR = Color.hex('#04E5FE')
-PATH_COLOR = Color.hex('#FFFFFF')
+PATH_COLOR = Vec3.from_hex('#FFFFFF')
 
 # POLYGONS
 POLYGON_TEXT_THICKNESS = 2 # IN INTEGER
 POLYGON_TEXT_SIZE = 0.018 # IN PERCENTAGE
 POLYGON_TEXT_MIN_SIZE = 0.0024 # IN KILOMETERS
 POLYGON_TEXT_MAX_SIZE = 0.015 # IN KILOMETERS
-POLYGON_TEXT_COLOR = Color.hex('#AAAAAA')
+POLYGON_TEXT_COLOR = Vec3.from_hex('#AAAAAA')
 
 # GRASS_COLOR = Color.hex('#527C6D')
 # WATER_COLOR = Color.hex('#516C7D')
 # BUILDING_COLOR = Color.hex('#464B51')
 # UNKNOWN_COLOR = Color.hex('#51565C')
 
-GRASS_COLOR = Color.hex('#FFFFFF')
-WATER_COLOR = Color.hex('#FFFFFF')
-BUILDING_COLOR = Color.hex('#FFFFFF')
-UNKNOWN_COLOR = Color.hex('#FFFFFF')
+GRASS_COLOR = Vec3.from_hex('#FFFFFF')
+WATER_COLOR = Vec3.from_hex('#FFFFFF')
+BUILDING_COLOR = Vec3.from_hex('#FFFFFF')
+UNKNOWN_COLOR = Vec3.from_hex('#FFFFFF')
 
 
 # POINTS
@@ -94,13 +99,16 @@ CANCEL_POS = Vec2(0.8, 0.9)
 # TEXTURES
 
 BUILDING_1_TEXTURE = Texture2D('textures/polygon/building_1.jpg', 1)
-BUILDING_1_TEXTURE = Texture2D('textures/polygon/building_2.jpg', 1)
+BUILDING_2_TEXTURE = Texture2D('textures/polygon/building_2.jpg', 1)
 BUILDING_3_TEXTURE = Texture2D('textures/polygon/building_3.jpg', 1)
 
 WATER_TEXTURE = Texture2D('textures/polygon/water.jpg', 1)
 GRASS_TEXTURE = Texture2D('textures/polygon/grass.jpg', 1)
 
 ASPHALT_TEXTURE = Texture2D('textures/line_string/asphalt.jpg', 1)
+
+
+#########################
 
 BUILDING_BRICKS_TEXTURE_PATH = 'textures/polygon/building_1.jpg'
 BUILDING_CONCRETE_TEXTURE_PATH = 'textures/polygon/building_2.jpg'
@@ -110,7 +118,7 @@ WATER_TEXTURE_PATH = 'textures/polygon/water.jpg'
 GRASS_TEXTURE_PATH = 'textures/polygon/grass.jpg'
 
 ASPHALT_TEXTURE_PATH = 'textures/line_string/asphalt.jpg'
-SELECTED_TEXTURE_PATH = 'textures/line_string/selected.jpg'
+PATH_TEXTURE_PATH = 'textures/line_string/path.jpg'
 
 ORIGIN_TEXTURE_PATH = 'textures/point/origin.png'
 DESTINY_TEXTURE_PATH = 'textures/point/destiny.png'
@@ -166,3 +174,24 @@ MAP_PATH = 'maps/russas.geojson'
 # CAMERA
 CAMERA_SPEED = 0.25 # IN PERCENTAGE
 CAMERA_ANIMATED = False # IN BOOLEAN
+  
+LIGHT = Light(
+    glm.vec3(0, 0, 1), 
+    glm.vec3(0.3, 0.3, 0.3), 
+    glm.vec3(0.8, 0.8, 0.8), 
+    glm.vec3(1, 1, 1)
+)
+
+CAMERA = Camera(glm.vec3(0, 0, 1), glm.vec3(0, 0, 0), glm.vec3(0, 1, 0))
+PROJECTION = Projection(90, WINDOW_WIDTH / WINDOW_HEIGHT, 0.00001, 1000)
+
+POLYGON_SHADER = Shader('shaders/polygon.vert', 'shaders/polygon.frag')
+
+SHADOW_SHADER = Shader('shaders/shadow.vert', 'shaders/shadow.frag')
+
+NORMAL_BUILDING_1_TEXTURE = Texture2D('textures/polygon/building_1_nor.jpg', 1)
+NORMAL_BUILDING_2_TEXTURE = Texture2D('textures/polygon/building_2_nor.jpg', 1)
+NORMAL_BUILDING_3_TEXTURE = Texture2D('textures/polygon/building_3_nor.jpg', 1)
+
+NORMAL_GRASS_TEXTURE= Texture2D('textures/polygon/grass_nor.jpg', 1)
+NORMAL_WATER_TEXTURE = Texture2D('textures/polygon/water_nor.jpg', 1)

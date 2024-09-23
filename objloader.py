@@ -70,8 +70,6 @@ class OBJ:
                 material = values[1]
             elif values[0] == 'mtllib':
                 
-                print(dirname, values[1])
-                
                 self.mtl = self.loadMaterial(os.path.join(dirname, values[1]))
             elif values[0] == 'f':
                 face = []

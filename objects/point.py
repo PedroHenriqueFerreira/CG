@@ -59,8 +59,6 @@ class Point:
         self.blink_times = 0
 
     def draw(self):
-        self.counter += 1
-        
         if not self.loaded:
             self.load()
             self.texture.load()

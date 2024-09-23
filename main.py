@@ -6,12 +6,14 @@ from settings import *
 
 from objects.skybox import SkyBox
 
+from objects.obj import OBJ
+
 from structures.vector import Vec2, Vec3
 from objects.map import Map
 
 from objects.texture import Texture2D
 
-map = Map(MAP_PATH)
+map = Map(MAP_PATH, CAMERA, PROJECTION, LIGHT)
 
 window_width = WINDOW_WIDTH
 window_height = WINDOW_HEIGHT
@@ -38,7 +40,7 @@ def window_to_world(window: Vec2):
     return screen_to_world(window_to_screen(window))
 
 def initializeGL():
-    glClearColor(BG_COLOR.r, BG_COLOR.g, BG_COLOR.b, 1)
+    glClearColor(BG_COLOR.x, BG_COLOR.y, BG_COLOR.z, 1)
     
     glEnable(GL_TEXTURE_2D)
     
@@ -71,12 +73,24 @@ skybox = SkyBox([
 
 ground_texture = Texture2D('textures/ground.jpg')
 
+point_police = OBJ('points/police/police.obj')
+
+counter = 0
+
+import glm
+
 def paintGL():
+    global counter
+    
+    counter += 1
+    counter = counter % 360
+    
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    gluPerspective(90, window_width / window_height, 0.0001, 1000)
+    
+    gluPerspective(90, window_width / window_height, 0.00001, 1000)
 
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
@@ -86,20 +100,42 @@ def paintGL():
 
         map.offset = eye
 
-        map.camera.update(
+        map.camera2.update(
             eye.x + map.view.x, eye.y + map.view.y, 1 / map.scale,
             map.my_car.pos.x, map.my_car.pos.y, 0,
             map.my_car.j.x, map.my_car.j.y, 0
         )
+        
+        map.camera.update(
+            glm.vec3(eye.x + map.view.x, eye.y + map.view.y, 1 / map.scale),
+            glm.vec3(map.my_car.pos.x, map.my_car.pos.y, 0),
+            glm.vec3(map.my_car.j.x, map.my_car.j.y, 0)
+        )
 
     else:
-        map.camera.update(
+        map.camera2.update(
             map.offset.x, map.offset.y, 1 / map.scale,
             map.offset.x + map.view.x, map.offset.y + map.view.y, 0,
             0, 1, 0
         )
+        
+        map.camera.update(
+            glm.vec3(map.offset.x, map.offset.y, 1 / map.scale),
+            glm.vec3(map.offset.x + map.view.x, map.offset.y + map.view.y, 0),
+            glm.vec3(0, 1, 0)
+        )
     
-    camera_pos =Vec3(*map.camera.values[:3])
+    # point_police.load()
+    
+    # glPushMatrix()
+    
+    # glScalef(0.05, 0.05, 0.05)
+    # glTranslatef(0, 0, 1)
+    # glRotatef(counter, 0, 0, 1)
+    # glRotatef(90, 1, 0, 0)
+    
+    # point_police.draw()
+    # glPopMatrix()
     
     # glPushMatrix()
     # glTranslatef(camera_pos.x, camera_pos.y, camera_pos.z)
@@ -253,6 +289,8 @@ def reshapeGL(width: int, height: int):
     global window_width, window_height
     
     window_width, window_height = width, height
+
+    map.projection.update(window_width / window_height)
 
     glViewport(0, 0, width, height)
 

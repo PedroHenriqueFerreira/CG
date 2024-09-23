@@ -7,9 +7,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from objects.map import Map
 
-from structures.vector import Vec2
+from structures.vector import Vec2, Vec3
 
-from objects.color import Color
 
 utf8_to_ascii: dict[str, str] = {
     'À': 'A', 'à': 'a',
@@ -39,7 +38,7 @@ class Text:
         map: 'Map',
         value: str,
         coords: list[Vec2],
-        color: Color,
+        color: Vec3,
         thickness: int,
         size: float,
         min_size: float,
@@ -170,7 +169,7 @@ class Text:
         if width > self.coords_width:
             return
 
-        glColor3f(self.color.r, self.color.g, self.color.b)
+        glColor3f(self.color.x, self.color.y, self.color.z)
 
         for pos, rot, val in self.split(scale, width):
             glPushMatrix()

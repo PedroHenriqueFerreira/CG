@@ -1,6 +1,8 @@
 from typing import Union, Callable
 from math import radians, sin, cos, asin, sqrt, acos, degrees
 
+from numpy import array
+
 class Vec:
     ''' Vector class '''
     
@@ -111,6 +113,9 @@ class Vec:
         ''' Find nearest vector '''
         
         return min(vectors, key=lambda v: self.distance(v))
+    
+    def __array__(self, dtype=None):
+        return array(self.values, dtype=dtype)
 
     @staticmethod
     def min(*vectors: 'Vec'):
@@ -168,6 +173,11 @@ class Vec2(Vec):
 
         return r * c
 
+    def to_vec3(self, z: float):
+        ''' Convert 2D vector to 3D vector '''
+        
+        return Vec3(self.x, self.y, z)
+
 class Vec3(Vec):
     ''' 3D vector class '''
     
@@ -180,3 +190,7 @@ class Vec3(Vec):
 
     def __repr__(self):
         return f'Vec3({self.x}, {self.y}, {self.z})'
+    
+    @staticmethod
+    def from_hex(value: str):
+        return Vec3(*[int(value.lstrip('#')[i:i+2], 16) / 255 for i in (0, 2, 4)])

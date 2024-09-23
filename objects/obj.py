@@ -150,8 +150,7 @@ class OBJ:
                     mtl = self.mtl[material]
                     
                     if 'texture_Kd' in mtl:
-                        if not mtl['texture_Kd'].loaded:
-                            mtl['texture_Kd'].load()
+                        mtl['texture_Kd'].load()
                         
                         glBindTexture(GL_TEXTURE_2D, mtl['texture_Kd'].id)
                     else:

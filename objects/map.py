@@ -13,15 +13,19 @@ from objects.point import Point
 from objects.text import Text
 from objects.car import Car
 from objects.button import Button
-from objects.camera import Camera
+from objects.camera import Camera2, Camera, Projection
 
 from settings import *
 
 class Map:
-    def __init__(self, filepath: str):
+    def __init__(self, filepath: str, camera: Camera, projection: Projection, light: Light):
         self.filepath = filepath
 
-        self.camera = Camera(CAMERA_SPEED, CAMERA_ANIMATED)
+        self.camera2 = Camera2(CAMERA_SPEED, CAMERA_ANIMATED)
+
+        self.camera = camera
+        self.projection = projection
+        self.light = light
 
         # BOX
         self.min = Vec2(float('inf'), float('inf'))
@@ -121,7 +125,7 @@ class Map:
 
         self.textures[ASPHALT_TEXTURE_PATH] = Texture2D(ASPHALT_TEXTURE_PATH)
         
-        self.textures[SELECTED_TEXTURE_PATH] = Texture2D(SELECTED_TEXTURE_PATH)
+        self.textures[PATH_TEXTURE_PATH] = Texture2D(PATH_TEXTURE_PATH)
         
     def load_sounds(self):
         self.sounds[FORWARD_SOUND_PATH] = Sound(FORWARD_SOUND_PATH)
@@ -411,8 +415,10 @@ class Map:
         ) or properties.get('leisure') in (
             'park',
         ):
+            texture_normal = NORMAL_GRASS_TEXTURE
+            
             texture = self.textures[GRASS_TEXTURE_PATH]
-            texture_size = self.km_to_world(0.01)
+            texture_size = self.km_to_world(0.05)
             height = 0.0002
             color = GRASS_COLOR
 
@@ -422,27 +428,40 @@ class Map:
             'water',
         ):
             texture = self.textures[WATER_TEXTURE_PATH]
-            texture_size = self.km_to_world(0.1)
+            
+            texture_normal = NORMAL_WATER_TEXTURE
+            
+            texture_size = self.km_to_world(0.02)
             height = 0.0004
             color = WATER_COLOR
 
         elif properties.get('building'):
-            texture = self.textures[choice((
-                BUILDING_BRICKS_TEXTURE_PATH, 
-                BUILDING_CONCRETE_TEXTURE_PATH, 
-                BUILDING_PAINT_TEXTURE_PATH,
-            ))]
+            choice = randint(0, 2)
+            
+            match choice:
+                case 0:
+                    texture = self.textures[BUILDING_BRICKS_TEXTURE_PATH]
+                    texture_normal = NORMAL_BUILDING_1_TEXTURE
+                case 1:
+                    texture = self.textures[BUILDING_CONCRETE_TEXTURE_PATH]
+                    texture_normal = NORMAL_BUILDING_2_TEXTURE
+                case 2:
+                    texture = self.textures[BUILDING_PAINT_TEXTURE_PATH]
+                    texture_normal = NORMAL_BUILDING_3_TEXTURE
+                    
             texture_size = self.km_to_world(0.01)
             height = self.km_to_world(0.001) * float(properties.get('height', '3'))
             color = BUILDING_COLOR
 
         else:
             texture = self.textures[BUILDING_CONCRETE_TEXTURE_PATH]
+            texture_normal = NORMAL_BUILDING_2_TEXTURE
+            
             texture_size = self.km_to_world(0.01)
             height = 0.0003
             color = UNKNOWN_COLOR
 
-        self.polygons.append(Polygon(coords, height, color, texture, texture_size))
+        self.polygons.append(Polygon(self, coords, height, color, texture, texture_normal, texture_size))
 
         return True
 
@@ -523,8 +542,6 @@ class Map:
 
         self.offset += (coord - self.offset) * (1 - (self.scale / scale))
 
-        print(scale)
-
         self.scale = scale
 
     def move(self, movement: Vec2):
@@ -591,7 +608,7 @@ class Map:
                     0.0002, 
                     PATH_COLOR, 
                     self.km_to_world(PATH_SIZE),
-                    self.textures[SELECTED_TEXTURE_PATH],
+                    self.textures[PATH_TEXTURE_PATH],
                     self.km_to_world(0.01)
                 )
                 self.distance = gScore[destiny]
