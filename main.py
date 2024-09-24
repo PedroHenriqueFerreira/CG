@@ -177,6 +177,7 @@ def paintGL():
 
 
     # DRAW POLYGONS
+    # map.polygons[0].draw()
     for polygon in map.polygons:
         polygon.draw()
 

@@ -27,25 +27,21 @@ uniform sampler2D shadowMap;
 
 const float heightScale = 0.25;
 
-out vec4 color;
+out vec4 FragColor;
 
 float ShadowCalculation() {
-    // Perform perspective divide
-    vec3 projCoords = shadowCoord.xyz / shadowCoord.w;
-    vec2 uvCoords;
-    uvCoords.x = projCoords.x * 0.5 + 0.5;
-    uvCoords.y = projCoords.y * 0.5 + 0.5;
-    float z = projCoords.z * 0.5 + 0.5;
-    
-    float depth = texture(shadowMap, uvCoords).x;
-    
-    float bias = 0.0025;
+    // perform perspective divide
+    vec3 projCoords = (shadowCoord.xyz / shadowCoord.w);
+    // transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+    float closestDepth = texture(shadowMap, projCoords.xy).r; 
+    // get depth of current fragment from light's perspective
+    float currentDepth = projCoords.z;
+    // check whether current frag pos is in shadow
+    float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
 
-    if (depth + bias < z) {
-        return 0.5;
-    } else {
-        return 1.0;
-    }
+    return shadow;
 }
 
 void main() {
@@ -55,7 +51,7 @@ void main() {
     vec3 l = normalize(tangentLightPos - tangentPos);
 
     vec3 normal = texture(normalMap, fragTexCoord).rgb * 2.0 - 1.0;
-    vec3 dif = texture(texImage, fragTexCoord).rgb;
+    vec3 color = texture(texImage, fragTexCoord).rgb;
     
     // vec3 n = normalize(fragNormal);
     vec3 n = normalize(normal);
@@ -68,8 +64,7 @@ void main() {
 
     float shadow = ShadowCalculation();
 
-    vec3 result = (light.Ia + (diffuse + specular) * shadow) * dif;
+    vec3 result = (light.Ia + (diffuse + specular) * (1)) * color;
 
-    color = vec4(result, 1.0);
-
+    FragColor = vec4(result, 1.0);
 }

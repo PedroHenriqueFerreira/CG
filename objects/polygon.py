@@ -144,29 +144,28 @@ class Polygon:
         self.shadow_shader.load()
         self.make_shadow_map()
         
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, self.depth_map_fbo)
-        glViewport(0, 0, 1024, 1024)
-        glClear(GL_DEPTH_BUFFER_BIT)
+        # ---------------
         
-        glUseProgram(self.shadow_shader.id)
+        # glViewport(0, 0, 1024, 1024)
+        # glBindFramebuffer(GL_DRAW_FRAMEBUFFER, self.depth_map_fbo)
+        # glClear(GL_DEPTH_BUFFER_BIT)
         
-        glUniformMatrix4fv(self.shadow_shader.get('camera'), 1, GL_FALSE, self.map.camera.matrix)
-        glUniformMatrix4fv(self.shadow_shader.get('projection'), 1, GL_FALSE, self.map.projection.matrix)
-        glUniformMatrix4fv(self.shadow_shader.get('light'), 1, GL_FALSE, self.map.light.matrix)
+        # glUseProgram(self.shadow_shader.id)
         
-        glBindVertexArray(self.vao.id)
-        glDrawArrays(GL_TRIANGLES, 0, len(self.triangles))
-        glBindVertexArray(0) 
+        # glUniformMatrix4fv(self.shadow_shader.get('projection'), 1, GL_FALSE, self.map.projection.matrix)
+        # glUniformMatrix4fv(self.shadow_shader.get('light'), 1, GL_FALSE, self.map.light.matrix)
+        
+        # glBindVertexArray(self.vao.id)
+        # glDrawArrays(GL_TRIANGLES, 0, len(self.triangles))
+        # glBindVertexArray(0)
           
-        glUseProgram(0)
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        # glUseProgram(0)
+        # glBindFramebuffer(GL_FRAMEBUFFER, 0)
         
-        ######
-        glViewport(0, 0, 800, 800)
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        # glViewport(0, 0, 800, 800)
+        # glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         
-        ######
+        # ----------
         
         glUseProgram(self.shader.id)
         
@@ -193,27 +192,23 @@ class Polygon:
         glUniformMatrix4fv(self.shader.get('projection'), 1, GL_FALSE, self.map.projection.matrix)
         glUniformMatrix4fv(self.shader.get('light'), 1, GL_FALSE, self.map.light.matrix)
         
-        ###
-    
-        
-        ###
-        
         glBindVertexArray(self.vao.id)
         glDrawArrays(GL_TRIANGLES, 0, len(self.triangles))
         glBindVertexArray(0) 
           
         glUseProgram(0)
         
-        glBindTexture(GL_TEXTURE_2D, 0)
         glActiveTexture(GL_TEXTURE0)
-        
-        ###
+        glBindTexture(GL_TEXTURE_2D, 0)
     
     def make_shadow_map(self):
         if hasattr(self, 'depth_map_fbo'):
             return
         
+        # First we'll create a framebuffer object for rendering the depth map
         depth_map_fbo = glGenFramebuffers(1)
+        
+        # Next we create a 2D texture that we'll use as the framebuffer's depth buffer
         depth_map = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, depth_map)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, None)
@@ -222,13 +217,11 @@ class Polygon:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
         
-        # Attach depth texture as FBO's depth buffer
+        # With the generated depth texture we can attach it as the framebuffer's depth buffer
         glBindFramebuffer(GL_FRAMEBUFFER, depth_map_fbo)
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_map, 0)
-        
         glDrawBuffer(GL_NONE)
         glReadBuffer(GL_NONE)
-        
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
         self.depth_map_fbo = depth_map_fbo

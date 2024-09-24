@@ -20,7 +20,7 @@ uniform vec3 camPos;
 uniform sampler2DShadow shadowMap;
 uniform vec2 u_resolution;
 
-
+  
 float lookup(float ox, float oy) {
     vec2 pixelOffset = 1 / u_resolution;
     return textureProj(shadowMap, shadowCoord + vec4(ox * pixelOffset.x * shadowCoord.w,
