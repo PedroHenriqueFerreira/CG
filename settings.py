@@ -1,12 +1,8 @@
 import glm
 
+from glm import vec3
+
 from structures.vector import Vec2, Vec3
-
-from objects.texture import Texture2D
-
-from objects.light import Light
-from objects.camera import Camera, Projection
-from objects.shader import Shader
 
 # GENERAL
 BG_COLOR = Vec3.from_hex('#555A60')
@@ -96,20 +92,6 @@ PILOT_POS = Vec2(0.2, 0.9)
 RECALCULATE_POS = Vec2(0.5, 0.9)
 CANCEL_POS = Vec2(0.8, 0.9)
 
-# TEXTURES
-
-BUILDING_1_TEXTURE = Texture2D('textures/polygon/building_1.jpg', 1)
-BUILDING_2_TEXTURE = Texture2D('textures/polygon/building_2.jpg', 1)
-BUILDING_3_TEXTURE = Texture2D('textures/polygon/building_3.jpg', 1)
-
-WATER_TEXTURE = Texture2D('textures/polygon/water.jpg', 1)
-GRASS_TEXTURE = Texture2D('textures/polygon/grass.jpg', 1)
-
-ASPHALT_TEXTURE = Texture2D('textures/line_string/asphalt.jpg', 1)
-
-
-#########################
-
 BUILDING_BRICKS_TEXTURE_PATH = 'textures/polygon/building_1.jpg'
 BUILDING_CONCRETE_TEXTURE_PATH = 'textures/polygon/building_2.jpg'
 BUILDING_PAINT_TEXTURE_PATH = 'textures/polygon/building_3.jpg'
@@ -171,27 +153,89 @@ PILOT_UNAVAILABLE_SOUND_PATH = 'sounds/path/pilot_unavailable.mp3'
 
 MAP_PATH = 'maps/russas.geojson'
 
-# CAMERA
-CAMERA_SPEED = 0.25 # IN PERCENTAGE
-CAMERA_ANIMATED = False # IN BOOLEAN
-  
-LIGHT = Light(
-    glm.vec3(0, 0, 1), 
-    glm.vec3(0.3, 0.3, 0.3), 
-    glm.vec3(0.8, 0.8, 0.8), 
-    glm.vec3(1, 1, 1)
-)
+#### SETTINGS REFACTORING
 
-CAMERA = Camera(glm.vec3(0, 0, 1), glm.vec3(0, 0, 0), glm.vec3(0, 1, 0))
-PROJECTION = Projection(90, WINDOW_WIDTH / WINDOW_HEIGHT, 0.00001, 1000)
 
-POLYGON_SHADER = Shader('shaders/polygon.vert', 'shaders/polygon.frag')
+# TEXTURES
 
-SHADOW_SHADER = Shader('shaders/shadow.vert', 'shaders/shadow.frag')
+BUILDING_DIFFUSE_TEXTURE_FILE = 'textures/polygon/building_diffuse.jpg'
+BUILDING_NORMAL_TEXTURE_FILE = 'textures/polygon/building_normal.jpg'
 
-NORMAL_BUILDING_1_TEXTURE = Texture2D('textures/polygon/building_1_nor.jpg', 1)
-NORMAL_BUILDING_2_TEXTURE = Texture2D('textures/polygon/building_2_nor.jpg', 1)
-NORMAL_BUILDING_3_TEXTURE = Texture2D('textures/polygon/building_3_nor.jpg', 1)
+WATER_DIFFUSE_TEXTURE_FILE = 'textures/polygon/water_diffuse.jpg'
+WATER_NORMAL_TEXTURE_FILE = 'textures/polygon/water_normal.jpg'
 
-NORMAL_GRASS_TEXTURE= Texture2D('textures/polygon/grass_nor.jpg', 1)
-NORMAL_WATER_TEXTURE = Texture2D('textures/polygon/water_nor.jpg', 1)
+GRASS_DIFFUSE_TEXTURE_FILE = 'textures/polygon/grass_diffuse.jpg'
+GRASS_NORMAL_TEXTURE_FILE = 'textures/polygon/grass_normal.jpg'
+
+UNKNOWN_DIFFUSE_TEXTURE_FILE = 'textures/polygon/unknown_diffuse.jpg'
+UNKNOWN_NORMAL_TEXTURE_FILE = 'textures/polygon/unknown_normal.jpg'
+
+ROAD_DIFFUSE_TEXTURE_FILE = 'textures/line_string/road_diffuse.jpg'
+ROAD_NORMAL_TEXTURE_FILE = 'textures/line_string/road_normal.jpg'
+
+PATH_DIFFUSE_TEXTURE_FILE = 'textures/line_string/path_diffuse.jpg'
+PATH_NORMAL_TEXTURE_FILE = 'textures/line_string/path_normal.jpg'
+
+GROUND_DIFFUSE_TEXTURE_FILE = 'textures/ground/ground_diffuse.jpg'
+GROUND_NORMAL_TEXTURE_FILE = 'textures/ground/ground_normal.jpg'
+
+SKYBOX_TEXTURE_FILES = [
+    'textures/skybox/right.png',
+    'textures/skybox/left.png',
+    'textures/skybox/front.png',
+    'textures/skybox/back.png',
+    'textures/skybox/top.png',
+    'textures/skybox/bottom.png',
+]
+
+# SHADERS
+
+DEFAULT_SHADER_VERT_FILE = 'shaders/default.vert'
+DEFAULT_SHADER_FRAG_FILE = 'shaders/default.frag'
+
+SKYBOX_SHADER_VERT_FILE = 'shaders/skybox.vert'
+SKYBOX_SHADER_FRAG_FILE = 'shaders/skybox.frag'
+
+# MATERIALS
+
+GRASS_AMBIENT_MATERIAL = vec3(1, 1, 1)
+GRASS_DIFFUSE_MATERIAL = vec3(1, 1, 1)
+GRASS_SPECULAR_MATERIAL = vec3(1, 1, 1)
+GRASS_SHININESS_MATERIAL = 32.0
+
+WATER_AMBIENT_MATERIAL = vec3(1, 1, 1)
+WATER_DIFFUSE_MATERIAL = vec3(1, 1, 1)
+WATER_SPECULAR_MATERIAL = vec3(1, 1, 1)
+WATER_SHININESS_MATERIAL = 32.0
+
+BUILDING_AMBIENT_MATERIAL = vec3(1, 1, 1)
+BUILDING_DIFFUSE_MATERIAL = vec3(1, 1, 1)
+BUILDING_SPECULAR_MATERIAL = vec3(1, 1, 1)
+BUILDING_SHININESS_MATERIAL = 32.0
+
+UNKNOWN_AMBIENT_MATERIAL = vec3(1, 1, 1)
+UNKNOWN_DIFFUSE_MATERIAL = vec3(1, 1, 1)
+UNKNOWN_SPECULAR_MATERIAL = vec3(1, 1, 1)
+UNKNOWN_SHININESS_MATERIAL = 32.0
+
+ROAD_AMBIENT_MATERIAL = vec3(1, 1, 1)
+ROAD_DIFFUSE_MATERIAL = vec3(1, 1, 1)
+ROAD_SPECULAR_MATERIAL = vec3(1, 1, 1)
+ROAD_SHININESS_MATERIAL = 32.0
+
+PATH_AMBIENT_MATERIAL = vec3(0.1, 0.1, 0.1)
+PATH_DIFFUSE_MATERIAL = vec3(0.5, 0.5, 0.5)
+PATH_SPECULAR_MATERIAL = vec3(1.0, 1.0, 1.0)
+PATH_SHININESS_MATERIAL = 32.0
+
+GROUND_AMBIENT_MATERIAL = vec3(0.1, 0.1, 0.1)
+GROUND_DIFFUSE_MATERIAL = vec3(0.5, 0.5, 0.5)
+GROUND_SPECULAR_MATERIAL = vec3(1.0, 1.0, 1.0)
+GROUND_SHININESS_MATERIAL = 32.0
+
+# SIZES
+
+ROAD_SIZE = 6 # METERS
+PATH_SIZE = 6 # METERS
+
+###

@@ -20,7 +20,7 @@ class Metrics:
         
         self.distance = 0
 
-    def load_box(self, data: dict):
+    def load(self, data: dict):
         for feature in data['features']:
             geometry_type = feature['geometry']['type']
             geometry_coords = feature['geometry']['coordinates']
@@ -48,6 +48,9 @@ class Metrics:
         
     def from_km(self, km: float):
         return (km / self.distance) * self.aspect * 2
+        
+    def from_meters(self, meters: float):
+        return self.from_km(0.001 * meters)
         
     def from_pct(self, pct: float):
         return pct * 2

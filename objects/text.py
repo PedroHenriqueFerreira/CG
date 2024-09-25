@@ -71,9 +71,9 @@ class Text:
         if abs(Vec2.angle(Vec2(1, 0), self.coords[-1] - self.coords[0])) > 90:
             self.coords = self.coords[::-1]
 
-        self.size = self.map.percent_to_world(self.size)
-        self.min_size = self.map.km_to_world(self.min_size)
-        self.max_size = self.map.km_to_world(self.max_size)
+        self.size = self.map.metrics.from_pct(self.size)
+        self.min_size = self.map.metrics.from_km(self.min_size)
+        self.max_size = self.map.metrics.from_km(self.max_size)
 
         for curr, next in zip(self.coords[:-1], self.coords[1:]):
             distance = Vec2.distance(curr, next)

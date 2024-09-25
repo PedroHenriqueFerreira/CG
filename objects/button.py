@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 from structures.vector import Vec2
 
-from objects.texture import Texture2D
+from objects.textures import Texture2D
 
 class Button:
     def __init__(
@@ -46,10 +46,10 @@ class Button:
         self.action()
         
     def load(self):
-        self.pos = self.map.pos_to_screen(self.pos)
+        self.pos = self.map.metrics.from_screen(self.pos)
 
-        self.width = self.map.percent_to_world(self.width)
-        self.height = self.map.percent_to_world(self.height)
+        self.width = self.map.metrics.from_pct(self.width)
+        self.height = self.map.metrics.from_pct(self.height)
 
         self.loaded = True
 

@@ -1,123 +1,93 @@
+from glm import vec3
+from numpy import array
+
 from OpenGL.GL import *
 
-from objects.texture import TextureCubeMap
-from structures.vector import Vec3
+from objects.vertex_arrays import SkyBoxVertexArray
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from objects.map import Map
 
 class SkyBox:
-    ''' Represents a skybox. '''
+    ''' Classe que representa o skybox. '''
     
-    def __init__(
-        self, 
-        files: list[str],
-    ):
-        self.files = files
+    def __init__(self, app: 'Map'):
+        self.app = app
         
-        self.texture = TextureCubeMap(files)
+        self.vao: SkyBoxVertexArray | None = None
         
-        self.gl_list = 0
-    
+        self.load()
+        
+    def load(self):
+        ''' Carrega o skybox. '''
+        
+        positions = [
+            vec3(-1.0,  1.0, -1.0),
+            vec3(-1.0, -1.0, -1.0),
+            vec3( 1.0, -1.0, -1.0),
+            vec3( 1.0, -1.0, -1.0),
+            vec3( 1.0,  1.0, -1.0),
+            vec3(-1.0,  1.0, -1.0),
+
+            vec3(-1.0, -1.0,  1.0),
+            vec3(-1.0, -1.0, -1.0),
+            vec3(-1.0,  1.0, -1.0),
+            vec3(-1.0,  1.0, -1.0),
+            vec3(-1.0,  1.0,  1.0),
+            vec3(-1.0, -1.0,  1.0),
+
+            vec3(1.0, -1.0, -1.0),
+            vec3( 1.0, -1.0,  1.0),
+            vec3( 1.0,  1.0,  1.0),
+            vec3( 1.0,  1.0,  1.0),
+            vec3( 1.0,  1.0, -1.0),
+            vec3( 1.0, -1.0, -1.0),
+
+            vec3(-1.0, -1.0,  1.0),
+            vec3(-1.0,  1.0,  1.0),
+            vec3( 1.0,  1.0,  1.0),
+            vec3( 1.0,  1.0,  1.0),
+            vec3( 1.0, -1.0,  1.0),
+            vec3(-1.0, -1.0,  1.0),
+
+            vec3(-1.0,  1.0, -1.0),
+            vec3( 1.0,  1.0, -1.0),
+            vec3( 1.0,  1.0,  1.0),
+            vec3( 1.0,  1.0,  1.0),
+            vec3(-1.0,  1.0,  1.0),
+            vec3(-1.0,  1.0, -1.0),
+
+            vec3(-1.0, -1.0, -1.0),
+            vec3(-1.0, -1.0,  1.0),
+            vec3( 1.0, -1.0, -1.0),
+            vec3( 1.0, -1.0, -1.0),
+            vec3(-1.0, -1.0,  1.0),
+            vec3( 1.0, -1.0,  1.0),
+        ]
+        
+        data = array(positions).reshape(-1)
+        
+        self.vao = SkyBoxVertexArray(data)
+        
     def draw(self):
-        ''' Draw the skybox. '''
+        ''' Desenha o skybox. '''
         
-        if self.gl_list > 0:
-            return glCallList(self.gl_list)
+        glDisable(GL_DEPTH_TEST)
         
-        self.texture.load()
+        self.app.shaders.skybox.use()
+        self.app.textures.skybox.use(0)
         
-        self.gl_list = glGenLists(1)
-        glNewList(self.gl_list, GL_COMPILE)
-        glEnable(GL_TEXTURE_CUBE_MAP)
-        glBindTexture(GL_TEXTURE_CUBE_MAP, self.texture.id)
+        self.app.shaders.skybox.set('view', self.app.view.matrix)
+        self.app.shaders.skybox.set('projection', self.app.projection.matrix)
+        self.app.shaders.skybox.set('skybox', 0)
         
-        glColor3f(1, 1, 1)
-        glBegin(GL_QUADS)
+        self.vao.draw()
         
-        # BOTTOM
+        self.app.textures.skybox.unuse()
+        self.app.shaders.skybox.unuse()
         
-        glTexCoord3f(-1, 1, -1)
-        glVertex3f(-100, 100, -100)
+        glEnable(GL_DEPTH_TEST)
+        glClear(GL_DEPTH_BUFFER_BIT)
         
-        glTexCoord3f(-1, -1, -1)
-        glVertex3f(-100, -100, -100)
-        
-        glTexCoord3f(1, -1, -1)
-        glVertex3f(100, -100, -100)
-        
-        glTexCoord3f(1, 1, -1)
-        glVertex3f(100, 100, -100)
-        
-        # LEFT
-        
-        glTexCoord3f(-1, -1,  1)
-        glVertex3f(-100, -100, 100)
-        
-        glTexCoord3f(-1, -1, -1)
-        glVertex3f(-100, -100, -100)
-        
-        glTexCoord3f(-1, 1, -1)
-        glVertex3f(-100, 100, -100)
-        
-        glTexCoord3f(-1,  1,  1)
-        glVertex3f(-100, 100, 100)
-        
-        # RIGHT
-        
-        glTexCoord3f(1, -1, -1)
-        glVertex3f(100, -100, -100)
-        
-        glTexCoord3f(1, -1,  1)
-        glVertex3f(100, -100,  100)
-        
-        glTexCoord3f(1,  1,  1)
-        glVertex3f(100,  100, 100)
-        
-        glTexCoord3f(1,  1, -1)
-        glVertex3f(100, 100, -100)
-        
-        # TOP
-        
-        glTexCoord3f(-1, -1,  1)
-        glVertex3f(-100, -100, 100)
-        
-        glTexCoord3f(-1,  1,  1)
-        glVertex3f(-100, 100, 100)
-        
-        glTexCoord3f(1,  1,  1)
-        glVertex3f(100, 100, 100)
-                
-        glTexCoord3f(1, -1,  1)
-        glVertex3f(100, -100, 100)
-        
-        # FRONT
-        
-        glTexCoord3f(-1, 1, -1)
-        glVertex3f(-100, 100, -100)
-        
-        glTexCoord3f(1,  1, -1)
-        glVertex3f(100, 100, -100)
-        
-        glTexCoord3f(1,  1,  1)
-        glVertex3f(100, 100, 100)
-        
-        glTexCoord3f(-1,  1,  1)
-        glVertex3f(-100, 100, 100)
-        
-        # BACK
-        
-        glTexCoord3f(-1, -1, -1)
-        glVertex3f(-100, -100, -100)
-        
-        glTexCoord3f(-1, -1,  1)
-        glVertex3f(-100, -100, 100)
-        
-        glTexCoord3f(1, -1, 1)
-        glVertex3f(100, -100, 100)
-        
-        glTexCoord3f(1, -1, -1)
-        glVertex3f(100, -100, -100) 
-        
-        glEnd()
-        
-        glBindTexture(GL_TEXTURE_CUBE_MAP, 0)   
-        glDisable(GL_TEXTURE_CUBE_MAP)
-        glEndList()

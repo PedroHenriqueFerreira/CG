@@ -10,7 +10,7 @@ from random import choice
 from structures.matrix import Mat2
 from structures.vector import Vec2
 
-from objects.texture import Texture2D
+from objects.textures import Texture2D
 from objects.sound import Sound
 
 from objects.obj import OBJ
@@ -66,13 +66,13 @@ class Car:
         self.obj = OBJ('models/low/untitled.obj')
 
     def load(self):
-        self.size = self.map.km_to_world(self.size)
-        self.circle_size = self.map.percent_to_world(self.circle_size)
-        self.circle_min_size = self.map.km_to_world(self.circle_min_size)
-        self.circle_max_size = self.map.km_to_world(self.circle_max_size)
+        self.size = self.map.metrics.from_km(self.size)
+        self.circle_size = self.map.metrics.from_pct(self.circle_size)
+        self.circle_min_size = self.map.metrics.from_km(self.circle_min_size)
+        self.circle_max_size = self.map.metrics.from_km(self.circle_max_size)
 
-        self.forward_size = self.map.km_to_world(self.forward_size)
-        self.backward_size = self.map.km_to_world(self.backward_size)
+        self.forward_size = self.map.metrics.from_km(self.forward_size)
+        self.backward_size = self.map.metrics.from_km(self.backward_size)
 
         self.loaded = True
 

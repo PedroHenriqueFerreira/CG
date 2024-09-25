@@ -11,9 +11,9 @@ from objects.obj import OBJ
 from structures.vector import Vec2, Vec3
 from objects.map import Map
 
-from objects.texture import Texture2D
+from objects.textures import Texture2D
 
-map = Map(MAP_PATH, CAMERA, PROJECTION, LIGHT)
+map = None
 
 window_width = WINDOW_WIDTH
 window_height = WINDOW_HEIGHT
@@ -40,6 +40,8 @@ def window_to_world(window: Vec2):
     return screen_to_world(window_to_screen(window))
 
 def initializeGL():
+    global map
+    
     glClearColor(BG_COLOR.x, BG_COLOR.y, BG_COLOR.z, 1)
     
     glEnable(GL_TEXTURE_2D)
@@ -55,36 +57,16 @@ def initializeGL():
     
     glShadeModel(GL_SMOOTH) 
     
-    glDepthFunc(GL_LESS)
+    glDepthFunc(GL_LEQUAL)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
     glPointSize(6)
-
-# sky_texture = Texture2D('textures/cloudySea.jpg')
-
-skybox = SkyBox([
-    'textures/skybox/right.png', 
-    'textures/skybox/left.png', 
-    'textures/skybox/front.png',
-    'textures/skybox/back.png',
-    'textures/skybox/top.png',
-    'textures/skybox/bottom.png', 
-])
-
-ground_texture = Texture2D('textures/ground.jpg')
-
-point_police = OBJ('points/police/police.obj')
-
-counter = 0
+    
+    map = Map(MAP_PATH)
 
 import glm
 
 def paintGL():
-    global counter
-    
-    counter += 1
-    counter = counter % 360
-    
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
     glMatrixMode(GL_PROJECTION)
@@ -99,119 +81,61 @@ def paintGL():
         eye = map.my_car.pos - map.my_car.j * 0.01
 
         map.offset = eye
-
-        map.camera2.update(
-            eye.x + map.view.x, eye.y + map.view.y, 1 / map.scale,
-            map.my_car.pos.x, map.my_car.pos.y, 0,
-            map.my_car.j.x, map.my_car.j.y, 0
-        )
         
-        map.camera.update(
-            glm.vec3(eye.x + map.view.x, eye.y + map.view.y, 1 / map.scale),
+        map.view.update(
+            glm.vec3(eye.x + map.rotation.x, eye.y + map.rotation.y, 1 / map.scale),
             glm.vec3(map.my_car.pos.x, map.my_car.pos.y, 0),
             glm.vec3(map.my_car.j.x, map.my_car.j.y, 0)
         )
 
     else:
-        map.camera2.update(
-            map.offset.x, map.offset.y, 1 / map.scale,
-            map.offset.x + map.view.x, map.offset.y + map.view.y, 0,
-            0, 1, 0
-        )
-        
-        map.camera.update(
+        map.view.update(
             glm.vec3(map.offset.x, map.offset.y, 1 / map.scale),
-            glm.vec3(map.offset.x + map.view.x, map.offset.y + map.view.y, 0),
+            glm.vec3(map.offset.x + map.rotation.x, map.offset.y + map.rotation.y, 0),
             glm.vec3(0, 1, 0)
         )
     
-    # point_police.load()
-    
-    # glPushMatrix()
-    
-    # glScalef(0.05, 0.05, 0.05)
-    # glTranslatef(0, 0, 1)
-    # glRotatef(counter, 0, 0, 1)
-    # glRotatef(90, 1, 0, 0)
-    
-    # point_police.draw()
-    # glPopMatrix()
-    
-    # glPushMatrix()
-    # glTranslatef(camera_pos.x, camera_pos.y, camera_pos.z)
-    skybox.draw()
-    # glPopMatrix()
-    
-    glLightfv(GL_LIGHT0, GL_POSITION, (1, 1, 1))
-    glLightfv(GL_LIGHT0, GL_AMBIENT, (0.25, 0.25, 0.25))
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, (0.5, 0.5, 0.5))
-    glLightfv(GL_LIGHT0, GL_SPECULAR, (1, 1, 1))
-    
-    # glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, (1, 1, 1))
-    # glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, (1, 1, 1))
-    # glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, (1, 1, 1))
-    # glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 5.0)
-
-    # DRAW GROUND
-    ground_texture.load()
-    
-    glBindTexture(GL_TEXTURE_2D, ground_texture.id)
-    
-    glBegin(GL_QUADS)
-    
-    glTexCoord2f(-50, -50)
-    glVertex3f(-1, -1, 0)
-    
-    glTexCoord2f(50, -50)
-    glVertex3f(1, -1, 0)
-    
-    glTexCoord2f(50, 50)
-    glVertex3f(1, 1, 0)
-
-    glTexCoord2f(-50, 50)
-    glVertex3f(-1, 1, 0)
-
-    glEnd()
-
-    glBindTexture(GL_TEXTURE_2D, 0)
-
+    map.skybox.draw()
+    map.ground.draw()
+    map.line_strings.draw()
+    map.polygons.draw()
 
     # DRAW POLYGONS
     # map.polygons[0].draw()
-    for polygon in map.polygons:
-        polygon.draw()
+    # for polygon in map.polygons:
+    #     polygon.draw()
 
     # DRAW LINE_STRINGS
-    for line_string in map.line_strings:
-        line_string.draw()
+    # for line_string in map.line_strings:
+    #     line_string.draw()
 
-    if map.path:
-        map.path.draw()
+    # if map.path:
+    #     map.path.draw()
 
     # DRAW TEXTS
-    for text in map.texts:
-        text.draw()
+    # for text in map.texts:
+    #     text.draw()
 
     # DRAW CARS
-    for car in map.cars:
-        car.draw()
+    # for car in map.cars:
+        # car.draw()
 
-    if map.my_car:
-        map.my_car.draw()
+    # if map.my_car:
+    #     map.my_car.draw()
 
     # DRAW POINTS
-    for point in map.points:
-        point.draw()
+    # for point in map.points:
+    #     point.draw()
 
-    if map.origin:
-        map.origin.draw()
+    # if map.origin:
+    #     map.origin.draw()
 
-    if map.destiny:
-        map.destiny.draw()
+    # if map.destiny:
+    #     map.destiny.draw()
 
     # DRAW BUTTONS
-    for button in map.buttons:
-        button.draw()
+    # for button in map.buttons:
+    #     button.draw()
 
     glutSwapBuffers()
 

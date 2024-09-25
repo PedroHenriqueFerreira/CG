@@ -1,7 +1,6 @@
 from vbo import VBO
 from shader_program import ShaderProgram
 
-
 class VAO:
     def __init__(self, ctx):
         self.ctx = ctx

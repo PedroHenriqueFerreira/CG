@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from objects.map import Map
 
-from objects.texture import Texture2D
+from objects.textures import Texture2D
 from objects.sound import Sound
 
 from structures.vector import Vec2
@@ -46,9 +46,9 @@ class Point:
         self.counter = 0
 
     def load(self):
-        self.size = self.map.percent_to_world(self.size)
-        self.min_size = self.map.km_to_world(self.min_size)
-        self.max_size = self.map.km_to_world(self.max_size)
+        self.size = self.map.metrics.from_pct(self.size)
+        self.min_size = self.map.metrics.from_km(self.min_size)
+        self.max_size = self.map.metrics.from_km(self.max_size)
 
         self.loaded = True
 

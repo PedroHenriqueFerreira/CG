@@ -3,7 +3,7 @@ from OpenGL.GL import *
 from os import path
 from structures.vector import Vec2, Vec3
 
-from objects.texture import Texture2D
+from objects.textures import Texture2D
 
 class OBJ:
     def __init__(self, pathname: str):

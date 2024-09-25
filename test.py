@@ -245,7 +245,7 @@ if __name__ == "__main__":
 
     texture = load_texture("texture.png")
 
-    glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(GL_TEXTURE0)
     glBindTexture(GL_TEXTURE_2D, texture)
     glUniform1i(sTexture, 0)
 
