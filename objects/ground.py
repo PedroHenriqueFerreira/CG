@@ -75,21 +75,16 @@ class Ground:
         self.app.shaders.default.set('lightPos', self.app.light.position)
         self.app.shaders.default.set('viewPos', self.app.view.position)
         
-        self.app.shaders.default.set('light.ambient', self.app.light.ambient)
-        self.app.shaders.default.set('light.diffuse', self.app.light.diffuse)
-        self.app.shaders.default.set('light.specular', self.app.light.specular)
-        
-        self.app.textures.ground_diffuse.use(0)
+        self.app.textures.skybox.use(0)
         self.app.textures.ground_normal.use(1)
+        self.app.textures.ground_displacement.use(2)
         
-        self.app.shaders.default.set('diffuse', 0)
-        self.app.shaders.default.set('normal', 1)
-        
-        self.app.shaders.default.set('material.ambient', self.app.materials.ground.ambient)
-        self.app.shaders.default.set('material.diffuse', self.app.materials.ground.diffuse)
-        self.app.shaders.default.set('material.specular', self.app.materials.ground.specular)
-        self.app.shaders.default.set('material.shininess', self.app.materials.ground.shininess)
+        self.app.shaders.default.set('diffuseMap', 0)
+        self.app.shaders.default.set('normalMap', 1)
+        self.app.shaders.default.set('displacementMap', 2)
         
         self.vao.draw()
         
         self.app.textures.ground_diffuse.unuse()
+        self.app.textures.ground_normal.unuse()
+        self.app.textures.ground_displacement.unuse()

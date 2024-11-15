@@ -160,24 +160,31 @@ MAP_PATH = 'maps/russas.geojson'
 
 BUILDING_DIFFUSE_TEXTURE_FILE = 'textures/polygon/building_diffuse.jpg'
 BUILDING_NORMAL_TEXTURE_FILE = 'textures/polygon/building_normal.jpg'
+BUILDING_DISPLACEMENT_TEXTURE_FILE = 'textures/polygon/building_displacement.jpg'
 
 WATER_DIFFUSE_TEXTURE_FILE = 'textures/polygon/water_diffuse.jpg'
 WATER_NORMAL_TEXTURE_FILE = 'textures/polygon/water_normal.jpg'
+WATER_DISPLACEMENT_TEXTURE_FILE = 'textures/polygon/water_displacement.jpg'
 
 GRASS_DIFFUSE_TEXTURE_FILE = 'textures/polygon/grass_diffuse.jpg'
 GRASS_NORMAL_TEXTURE_FILE = 'textures/polygon/grass_normal.jpg'
+GRASS_DISPLACEMENT_TEXTURE_FILE = 'textures/polygon/grass_displacement.jpg'
 
 UNKNOWN_DIFFUSE_TEXTURE_FILE = 'textures/polygon/unknown_diffuse.jpg'
 UNKNOWN_NORMAL_TEXTURE_FILE = 'textures/polygon/unknown_normal.jpg'
+UNKNOWN_DISPLACEMENT_TEXTURE_FILE = 'textures/polygon/unknown_displacement.jpg'
 
 ROAD_DIFFUSE_TEXTURE_FILE = 'textures/line_string/road_diffuse.jpg'
 ROAD_NORMAL_TEXTURE_FILE = 'textures/line_string/road_normal.jpg'
+ROAD_DISPLACEMENT_TEXTURE_FILE = 'textures/line_string/road_displacement.jpg'
 
 PATH_DIFFUSE_TEXTURE_FILE = 'textures/line_string/path_diffuse.jpg'
 PATH_NORMAL_TEXTURE_FILE = 'textures/line_string/path_normal.jpg'
+PATH_DISPLACEMENT_TEXTURE_FILE = 'textures/line_string/path_displacement.jpg'
 
 GROUND_DIFFUSE_TEXTURE_FILE = 'textures/ground/ground_diffuse.jpg'
 GROUND_NORMAL_TEXTURE_FILE = 'textures/ground/ground_normal.jpg'
+GROUND_DISPLACEMENT_TEXTURE_FILE = 'textures/ground/ground_displacement.jpg'
 
 SKYBOX_TEXTURE_FILES = [
     'textures/skybox/right.png',
@@ -195,43 +202,6 @@ DEFAULT_SHADER_FRAG_FILE = 'shaders/default.frag'
 
 SKYBOX_SHADER_VERT_FILE = 'shaders/skybox.vert'
 SKYBOX_SHADER_FRAG_FILE = 'shaders/skybox.frag'
-
-# MATERIALS
-
-GRASS_AMBIENT_MATERIAL = vec3(1, 1, 1)
-GRASS_DIFFUSE_MATERIAL = vec3(1, 1, 1)
-GRASS_SPECULAR_MATERIAL = vec3(1, 1, 1)
-GRASS_SHININESS_MATERIAL = 32.0
-
-WATER_AMBIENT_MATERIAL = vec3(1, 1, 1)
-WATER_DIFFUSE_MATERIAL = vec3(1, 1, 1)
-WATER_SPECULAR_MATERIAL = vec3(1, 1, 1)
-WATER_SHININESS_MATERIAL = 32.0
-
-BUILDING_AMBIENT_MATERIAL = vec3(1, 1, 1)
-BUILDING_DIFFUSE_MATERIAL = vec3(1, 1, 1)
-BUILDING_SPECULAR_MATERIAL = vec3(1, 1, 1)
-BUILDING_SHININESS_MATERIAL = 32.0
-
-UNKNOWN_AMBIENT_MATERIAL = vec3(1, 1, 1)
-UNKNOWN_DIFFUSE_MATERIAL = vec3(1, 1, 1)
-UNKNOWN_SPECULAR_MATERIAL = vec3(1, 1, 1)
-UNKNOWN_SHININESS_MATERIAL = 32.0
-
-ROAD_AMBIENT_MATERIAL = vec3(1, 1, 1)
-ROAD_DIFFUSE_MATERIAL = vec3(1, 1, 1)
-ROAD_SPECULAR_MATERIAL = vec3(1, 1, 1)
-ROAD_SHININESS_MATERIAL = 32.0
-
-PATH_AMBIENT_MATERIAL = vec3(0.1, 0.1, 0.1)
-PATH_DIFFUSE_MATERIAL = vec3(0.5, 0.5, 0.5)
-PATH_SPECULAR_MATERIAL = vec3(1.0, 1.0, 1.0)
-PATH_SHININESS_MATERIAL = 32.0
-
-GROUND_AMBIENT_MATERIAL = vec3(0.1, 0.1, 0.1)
-GROUND_DIFFUSE_MATERIAL = vec3(0.5, 0.5, 0.5)
-GROUND_SPECULAR_MATERIAL = vec3(1.0, 1.0, 1.0)
-GROUND_SHININESS_MATERIAL = 32.0
 
 # SIZES
 

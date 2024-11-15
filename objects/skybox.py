@@ -24,6 +24,7 @@ class SkyBox:
         ''' Carrega o skybox. '''
         
         positions = [
+            # Baixo
             vec3(-1.0,  1.0, -1.0),
             vec3(-1.0, -1.0, -1.0),
             vec3( 1.0, -1.0, -1.0),
@@ -31,6 +32,7 @@ class SkyBox:
             vec3( 1.0,  1.0, -1.0),
             vec3(-1.0,  1.0, -1.0),
 
+            # Esquerda
             vec3(-1.0, -1.0,  1.0),
             vec3(-1.0, -1.0, -1.0),
             vec3(-1.0,  1.0, -1.0),
@@ -38,13 +40,15 @@ class SkyBox:
             vec3(-1.0,  1.0,  1.0),
             vec3(-1.0, -1.0,  1.0),
 
+            # Direita
             vec3(1.0, -1.0, -1.0),
-            vec3( 1.0, -1.0,  1.0),
-            vec3( 1.0,  1.0,  1.0),
-            vec3( 1.0,  1.0,  1.0),
-            vec3( 1.0,  1.0, -1.0),
-            vec3( 1.0, -1.0, -1.0),
+            vec3(1.0, -1.0,  1.0),
+            vec3(1.0,  1.0,  1.0),
+            vec3(1.0,  1.0,  1.0),
+            vec3(1.0,  1.0, -1.0),
+            vec3(1.0, -1.0, -1.0),
 
+            # Cima
             vec3(-1.0, -1.0,  1.0),
             vec3(-1.0,  1.0,  1.0),
             vec3( 1.0,  1.0,  1.0),
@@ -52,6 +56,7 @@ class SkyBox:
             vec3( 1.0, -1.0,  1.0),
             vec3(-1.0, -1.0,  1.0),
 
+            # Frente
             vec3(-1.0,  1.0, -1.0),
             vec3( 1.0,  1.0, -1.0),
             vec3( 1.0,  1.0,  1.0),
@@ -59,6 +64,7 @@ class SkyBox:
             vec3(-1.0,  1.0,  1.0),
             vec3(-1.0,  1.0, -1.0),
 
+            # Atrás
             vec3(-1.0, -1.0, -1.0),
             vec3(-1.0, -1.0,  1.0),
             vec3( 1.0, -1.0, -1.0),
@@ -74,8 +80,6 @@ class SkyBox:
     def draw(self):
         ''' Desenha o skybox. '''
         
-        glDisable(GL_DEPTH_TEST)
-        
         self.app.shaders.skybox.use()
         self.app.textures.skybox.use(0)
         
@@ -88,6 +92,4 @@ class SkyBox:
         self.app.textures.skybox.unuse()
         self.app.shaders.skybox.unuse()
         
-        glEnable(GL_DEPTH_TEST)
-        glClear(GL_DEPTH_BUFFER_BIT)
         

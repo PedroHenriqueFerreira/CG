@@ -20,7 +20,6 @@ from objects.metrics import Metrics
 from objects.polygons import Polygons
 from objects.line_strings import LineStrings
 from objects.textures import Textures
-from objects.materials import Materials
 from objects.skybox import SkyBox
 from objects.ground import Ground
 from objects.shaders import Shaders
@@ -44,10 +43,8 @@ class Map:
         self.skybox = SkyBox(self)
         self.ground = Ground(self)
 
-        
         self.shaders = Shaders(self)
         self.textures = Textures(self)
-        self.materials = Materials(self)
 
         #############
 

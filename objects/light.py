@@ -7,7 +7,7 @@ class Light:
         self, 
         position = vec3(0, 0, 1), 
         ambient = vec3(0.2, 0.2, 0.2),
-        diffuse = vec3(1, 1, 1),
+        diffuse = vec3(0.6, 0.6, 0.6),
         specular = vec3(1, 1, 1)
     ):
         self.position = position

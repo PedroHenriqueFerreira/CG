@@ -8,10 +8,8 @@ from objects.skybox import SkyBox
 
 from objects.obj import OBJ
 
-from structures.vector import Vec2, Vec3
+from structures.vector import Vec2
 from objects.map import Map
-
-from objects.textures import Texture2D
 
 map = None
 
@@ -81,7 +79,7 @@ def paintGL():
         eye = map.my_car.pos - map.my_car.j * 0.01
 
         map.offset = eye
-        
+    
         map.view.update(
             glm.vec3(eye.x + map.rotation.x, eye.y + map.rotation.y, 1 / map.scale),
             glm.vec3(map.my_car.pos.x, map.my_car.pos.y, 0),

@@ -14,7 +14,6 @@ uniform vec3 viewPos;
 
 out vec3 fragPos;
 out vec2 texCoords;
-out vec3 fragNormal;
 
 out vec3 tangentFragPos;
 out vec3 tangentLightPos;
@@ -23,12 +22,9 @@ out vec3 tangentViewPos;
 void main(){
     fragPos = vec3(model * vec4(aPos, 1.0));
     texCoords = aTexCoords;
-    fragNormal = aNormal;
 
-    mat3 normalMat = transpose(inverse(mat3(model)));
-
-    vec3 T = normalize(normalMat * aTangent);
-    vec3 N = normalize(normalMat * aNormal);
+    vec3 T = normalize(mat3(model) * aTangent);
+    vec3 N = normalize(mat3(model) * aNormal);
     T = normalize(T - dot(T, N) * N);
     vec3 B = normalize(cross(N, T));
 

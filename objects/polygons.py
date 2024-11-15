@@ -222,77 +222,65 @@ class Polygons:
         self.app.shaders.default.set('lightPos', self.app.light.position)
         self.app.shaders.default.set('viewPos', self.app.view.position)
         
-        self.app.shaders.default.set('light.ambient', self.app.light.ambient)
-        self.app.shaders.default.set('light.diffuse', self.app.light.diffuse)
-        self.app.shaders.default.set('light.specular', self.app.light.specular)
-        
         if self.grasses_vao:
             self.app.textures.grass_diffuse.use(0)
             self.app.textures.grass_normal.use(1)
+            self.app.textures.grass_displacement.use(2)
             
-            self.app.shaders.default.set('diffuse', 0)
-            self.app.shaders.default.set('normal', 1)
-            
-            self.app.shaders.default.set('material.ambient', self.app.materials.grass.ambient)
-            self.app.shaders.default.set('material.diffuse', self.app.materials.grass.diffuse)
-            self.app.shaders.default.set('material.specular', self.app.materials.grass.specular)
-            self.app.shaders.default.set('material.shininess', self.app.materials.grass.shininess)
+            self.app.shaders.default.set('diffuseMap', 0)
+            self.app.shaders.default.set('normalMap', 1)
+            self.app.shaders.default.set('displacementMap', 2)
             
             self.grasses_vao.draw()
             
             self.app.textures.grass_diffuse.unuse()
             self.app.textures.grass_normal.unuse()
+            self.app.textures.grass_displacement.unuse()
             
         if self.waters_vao:
             self.app.textures.water_diffuse.use(0)
             self.app.textures.water_normal.use(1)
+            self.app.textures.water_displacement.use(2)
             
-            self.app.shaders.default.set('diffuse', 0)
-            self.app.shaders.default.set('normal', 1)
-            
-            self.app.shaders.default.set('material.ambient', self.app.materials.water.ambient)
-            self.app.shaders.default.set('material.diffuse', self.app.materials.water.diffuse)
-            self.app.shaders.default.set('material.specular', self.app.materials.water.specular)
-            self.app.shaders.default.set('material.shininess', self.app.materials.water.shininess)
+            self.app.shaders.default.set('diffuseMap', 0)
+            self.app.shaders.default.set('normalMap', 1)
+            self.app.shaders.default.set('displacementMap', 2)
             
             self.waters_vao.draw()
             
             self.app.textures.water_diffuse.unuse()
             self.app.textures.water_normal.unuse()
+            self.app.textures.water_displacement.unuse()
         
         if self.unknowns_vao:
             self.app.textures.unknown_diffuse.use(0)
             self.app.textures.unknown_normal.use(1)
+            self.app.textures.unknown_displacement.use(2)
             
-            self.app.shaders.default.set('diffuse', 0)
-            self.app.shaders.default.set('normal', 1)
-            
-            self.app.shaders.default.set('material.ambient', self.app.materials.unknown.ambient)
-            self.app.shaders.default.set('material.diffuse', self.app.materials.unknown.diffuse)
-            self.app.shaders.default.set('material.specular', self.app.materials.unknown.specular)
-            self.app.shaders.default.set('material.shininess', self.app.materials.unknown.shininess)
+            self.app.shaders.default.set('diffuseMap', 0)
+            self.app.shaders.default.set('normalMap', 1)
+            self.app.shaders.default.set('displacementMap', 2)
             
             self.unknowns_vao.draw()
             
             self.app.textures.unknown_diffuse.unuse()
             self.app.textures.unknown_normal.unuse()
+            self.app.textures.unknown_displacement.unuse()
             
         if self.buildings_vao:
             self.app.textures.building_diffuse.use(0)
             self.app.textures.building_normal.use(1)
+            self.app.textures.building_displacement.use(2)
             
-            self.app.shaders.default.set('diffuse', 0)
-            self.app.shaders.default.set('normal', 1)
-            
-            self.app.shaders.default.set('material.ambient', self.app.materials.building.ambient)
-            self.app.shaders.default.set('material.diffuse', self.app.materials.building.diffuse)
-            self.app.shaders.default.set('material.specular', self.app.materials.building.specular)
-            self.app.shaders.default.set('material.shininess', self.app.materials.building.shininess)
+            self.app.shaders.default.set('diffuseMap', 0)
+            self.app.shaders.default.set('normalMap', 1)
+            self.app.shaders.default.set('displacementMap', 2)
             
             self.buildings_vao.draw()
             
             self.app.textures.building_diffuse.unuse()
             self.app.textures.building_normal.unuse()
+            self.app.textures.building_displacement.unuse()
 
         self.app.shaders.default.unuse()
     
@@ -319,7 +307,7 @@ class Polygons:
         self.grasses_vao = DefaultVertexArray(grass_data)
         self.buildings_vao = DefaultVertexArray(building_data)
         self.unknowns_vao = DefaultVertexArray(unknown_data)
-    
+        
     def load_polygon(self, properties: dict, coords: list[vec2]):
         ''' Carrega um novo polígono '''
         
@@ -339,13 +327,13 @@ class Polygons:
             properties.get('leisure') in ('swimming_pool',) or 
             properties.get('natural') in ('water',)
         ):
-            self.waters.append(Polygon(self.app, coords, 0.3, 5))
+            self.waters.append(Polygon(self.app, coords, 0.2, 5))
 
         # Verifica se o polígono é algo desconhecido
         elif (
             not properties.get('building')
         ):
-            self.unknowns.append(Polygon(self.app, coords, 0.5, 5))
+            self.unknowns.append(Polygon(self.app, coords, 0.3, 10))
         
         # Verifica se o polígono é um prédio
         else:

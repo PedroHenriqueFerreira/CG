@@ -67,7 +67,7 @@ class LineString:
         self.coords = coords # Coordenadas
         self.size = app.metrics.from_meters(size) # Largura da linha em METROS
         self.height = app.metrics.from_meters(height) # Altura da linha em METROS
-        self.texture_size = texture_size # Tamanho da textura
+        self.texture_size = app.metrics.from_meters(texture_size) # Tamanho da textura em METROS
         
         self.initial_circle = Circle(coords[0], self.size, self.height, texture_size) # Círculo inicial
         self.final_circle = Circle(coords[-1], self.size, self.height, texture_size) # Círculo final
@@ -156,43 +156,34 @@ class LineStrings:
         self.app.shaders.default.set('lightPos', self.app.light.position)
         self.app.shaders.default.set('viewPos', self.app.view.position)
         
-        self.app.shaders.default.set('light.ambient', self.app.light.ambient)
-        self.app.shaders.default.set('light.diffuse', self.app.light.diffuse)
-        self.app.shaders.default.set('light.specular', self.app.light.specular)
-        
         if self.roads_vao:
-            self.app.textures.road_diffuse.use(0)
+            self.app.textures.skybox.use(0)
             self.app.textures.road_normal.use(1)
+            self.app.textures.road_displacement.use(2)
             
-            self.app.shaders.default.set('diffuse', 0)
-            self.app.shaders.default.set('normal', 1)
-            
-            self.app.shaders.default.set('material.ambient', self.app.materials.road.ambient)
-            self.app.shaders.default.set('material.diffuse', self.app.materials.road.diffuse)
-            self.app.shaders.default.set('material.specular', self.app.materials.road.specular)
-            self.app.shaders.default.set('material.shininess', self.app.materials.road.shininess)
+            self.app.shaders.default.set('diffuseMap', 0)
+            self.app.shaders.default.set('normalMap', 1)
+            self.app.shaders.default.set('displacementMap', 2)
             
             self.roads_vao.draw()
             
             self.app.textures.road_diffuse.unuse()
             self.app.textures.road_normal.unuse()
+            self.app.textures.road_displacement.unuse()
 
         if self.path:
             self.app.textures.path_diffuse.use(0)
             self.app.textures.path_normal.use(1)
             
-            self.app.shaders.default.set('diffuse', 0)
-            self.app.shaders.default.set('normal', 1)
-            
-            self.app.shaders.default.set('material.ambient', self.app.materials.path.ambient)
-            self.app.shaders.default.set('material.diffuse', self.app.materials.path.diffuse)
-            self.app.shaders.default.set('material.specular', self.app.materials.path.specular)
-            self.app.shaders.default.set('material.shininess', self.app.materials.path.shininess)
+            self.app.shaders.default.set('diffuseMap', 0)
+            self.app.shaders.default.set('normalMap', 1)
+            self.app.shaders.default.set('displacementMap', 2)
             
             DefaultVertexArray(self.path.get_data()).draw()
             
             self.app.textures.path_diffuse.unuse()
             self.app.textures.path_normal.unuse()
+            self.app.textures.path_displacement.unuse()
 
         self.app.shaders.default.unuse()
         
@@ -227,7 +218,7 @@ class LineStrings:
         ):
             return
 
-        self.roads.append(LineString(self.app, coords, ROAD_SIZE, 0.4, 1))
+        self.roads.append(LineString(self.app, coords, ROAD_SIZE, 0.2, 10))
         
     def load_path(self, path: list[vec2]):
-        self.path = LineString(self.app, path, PATH_SIZE, 0.5, 1)
+        self.path = LineString(self.app, path, PATH_SIZE, 0.3, 5)
